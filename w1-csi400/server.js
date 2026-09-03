@@ -8,7 +8,10 @@ app.use(express.json());
 
 // 3.สร้าง Route พื้นฐาน (GET)
 app.get('/',(req, res) => {
-    res.send('Welcome to my API!');
+    res.send('Hello, Web Services!');
+
+    console.log("nig");
+    console.log('request', req)
 })
 
 // 4.สร้าง Route สำหรับส่งข้อมูล JSON (GET)
@@ -62,4 +65,10 @@ app.get('/api/users/:id', (req,res) => {
         message: 'User found',
         user: user
     });
+});
+
+app.delete('/api/users/:id',(req, res) => {
+    const userId = parseInt(req.params.id);
+    users = users.filter( user => user.id !== userId);
+    res.status(204).send();
 });

@@ -76,9 +76,20 @@ app.put('/api/users/:id', (req, res) => {
 });
 
 app.delete('/api/users/:id',(req, res) => {
-    const userId = parseInt(req.params.id);
-    userData = userData.filter( user => user.id !== userId);
-    res.status(204).send();
+    const userId = req.params.id;
+    const userIndex = userData.findIndex( u => u.id.toString() === userId);
+
+    if (userIndex === -1) {
+        return res.status(404).json({ error: 'User not found' });
+    };
+
+    const userDeleted = userData.splice(userIndex, 1)[0];
+
+    res.status(200).json({
+        message: 'User deleted successfully',
+        deletedUser: userDeleted,
+        remainingUsers: userData
+    });
 });
 
 app.listen(port,() => {
