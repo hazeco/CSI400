@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avengers Quinjet Terminal - Web Services Security System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #080604;
+            --card-bg: rgba(22, 15, 10, 0.90);
+            --border-color: rgba(249, 115, 22, 0.3);
+            --primary: #f97316;
+            --primary-hover: #ea580c;
+            --primary-light: #fed7aa;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --accent-gold: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #a8a29e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- SPLASH SCREEN HUD STYLES (1.8s) --- */
+        #splashScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #1f1006 0%, #080402 85%);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s ease;
+        }
+
+        #splashScreen.hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .splash-reactor-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .reactor-ring-outer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px dashed rgba(249, 115, 22, 0.45);
+            animation: spinClockwise 8s linear infinite;
+            box-shadow: 0 0 30px rgba(249, 115, 22, 0.25);
+        }
+
+        .reactor-ring-inner {
+            position: absolute;
+            width: 75%;
+            height: 75%;
+            border-radius: 50%;
+            border: 2px solid rgba(249, 115, 22, 0.85);
+            border-top-color: transparent;
+            animation: spinCounter 3s linear infinite;
+        }
+
+        .reactor-core {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffedd5 20%, #f97316 65%, #c2410c 100%);
+            box-shadow: 0 0 35px #f97316, 0 0 60px rgba(249, 115, 22, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: pulseGlow 1.4s ease-in-out infinite alternate;
+        }
+
+        @keyframes spinClockwise {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes spinCounter {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(0.92); box-shadow: 0 0 20px #f97316; }
+            100% { transform: scale(1.08); box-shadow: 0 0 45px #f97316, 0 0 75px rgba(249, 115, 22, 0.8); }
+        }
+
+        .splash-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #f97316;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(249, 115, 22, 0.7);
+            margin-bottom: 6px;
+        }
+
+        .splash-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #fdba74;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+        }
+
+        .splash-progress-container {
+            width: 320px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 14px;
+            border: 1px solid rgba(249, 115, 22, 0.4);
+            position: relative;
+        }
+
+        .splash-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #c2410c, #f97316, #fed7aa);
+            box-shadow: 0 0 15px #f97316;
+            transition: width 0.04s linear;
+        }
+
+        .splash-log-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #fed7aa;
+            height: 20px;
+            letter-spacing: 1px;
+        }
+
+        .splash-skip-btn {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(20, 14, 10, 0.8);
+            border: 1px solid rgba(249, 115, 22, 0.4);
+            color: #fdba74;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .splash-skip-btn:hover {
+            border-color: #f97316;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
+        }
+
+        .replay-splash-btn {
+            background: rgba(249, 115, 22, 0.15);
+            border: 1px solid rgba(249, 115, 22, 0.4);
+            color: #fb923c;
+            padding: 5px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+        .replay-splash-btn:hover {
+            background: rgba(249, 115, 22, 0.3);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top, #231409 0%, #090604 80%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px 20px;
+        }
+
+        .container {
+            max-width: 1550px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .logo-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 27px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* 3-COLUMN GRID LAYOUT - EQUAL HEIGHT ALIGNMENT */
+        .grid-layout-3col {
+            display: grid;
+            grid-template-columns: 1.15fr 0.95fr 0.95fr;
+            gap: 18px;
+            align-items: stretch; /* ให้ทั้ง 3 คอลัมน์สูงเท่ากันเสมอ */
+        }
+
+        @media (max-width: 1100px) {
+            .grid-layout-3col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .col-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(249, 115, 22, 0.03);
+            margin-bottom: 16px;
+        }
+
+        .panel:last-child {
+            margin-bottom: 0;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(249, 115, 22, 0.18);
+            padding-bottom: 8px;
+            color: #fdba74;
+        }
+
+        /* F.R.I.D.A.Y. HUD PULSE STYLES (บวมออกหุบเข้า ไม่หมุน) */
+        .friday-hud-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 15px;
+            background: rgba(22, 15, 10, 0.9);
+            border: 1px solid rgba(249, 115, 22, 0.35);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(249, 115, 22, 0.08);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .friday-hud-panel.alert-active {
+            border-color: rgba(239, 68, 68, 0.9);
+            box-shadow: 0 0 35px rgba(239, 68, 68, 0.4), inset 0 0 25px rgba(239, 68, 68, 0.2);
+        }
+
+        .hud-wrap {
+            position: relative;
+            width: 155px;
+            height: 155px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Pulse Loop บวมออกหุบเข้าตามที่สั่ง ไม่หมุน 360 องศา */
+        .friday-hud-img {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            animation: pulseBreath 2.2s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(249, 115, 22, 0.8));
+            transition: all 0.3s ease;
+        }
+
+        .hud-pulse-ring {
+            position: absolute;
+            width: 152px;
+            height: 152px;
+            border-radius: 50%;
+            border: 2px dashed rgba(249, 115, 22, 0.55);
+            animation: ringBreath 2.2s ease-in-out infinite;
+        }
+
+        @keyframes pulseBreath {
+            0% {
+                transform: scale(0.92);
+                filter: drop-shadow(0 0 16px rgba(249, 115, 22, 0.6));
+            }
+            50% {
+                transform: scale(1.08);
+                filter: drop-shadow(0 0 30px rgba(249, 115, 22, 0.95)) drop-shadow(0 0 10px rgba(251, 146, 60, 0.8));
+            }
+            100% {
+                transform: scale(0.92);
+                filter: drop-shadow(0 0 16px rgba(249, 115, 22, 0.6));
+            }
+        }
+
+        @keyframes ringBreath {
+            0% {
+                transform: scale(0.90);
+                opacity: 0.35;
+            }
+            50% {
+                transform: scale(1.10);
+                opacity: 0.95;
+            }
+            100% {
+                transform: scale(0.90);
+                opacity: 0.35;
+            }
+        }
+
+        /* Alert state เมื่อ Access Denied */
+        .hud-wrap.alert .friday-hud-img {
+            filter: drop-shadow(0 0 35px #ef4444) hue-rotate(300deg);
+            animation: alertBreath 0.5s ease-in-out infinite alternate;
+        }
+
+        .hud-wrap.alert .hud-pulse-ring {
+            border-color: #ef4444;
+            box-shadow: 0 0 20px #ef4444;
+            animation: alertRing 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes alertBreath {
+            0% { transform: scale(0.94); }
+            100% { transform: scale(1.12); }
+        }
+
+        @keyframes alertRing {
+            0% { transform: scale(0.92); opacity: 0.4; }
+            100% { transform: scale(1.14); opacity: 1; }
+        }
+
+        .hud-status-badge {
+            margin-top: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 1.8px;
+            color: #fb923c;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .hud-status-badge.alert-text {
+            color: #ef4444;
+            animation: pulseGlow 0.4s infinite alternate;
+        }
+
+        .oauth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #241911;
+            color: #ffffff;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid rgba(249, 115, 22, 0.4);
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .oauth-btn:hover {
+            background: #352115;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 4px;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: rgba(14, 10, 7, 0.95);
+            border: 1px solid rgba(249, 115, 22, 0.25);
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 9px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary { 
+            background: linear-gradient(135deg, #f97316, #ea580c); 
+            color: #ffffff; 
+            box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3);
+        }
+        .btn-primary:hover { 
+            background: linear-gradient(135deg, #fb923c, #f97316); 
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
+        }
+
+        .btn-outline { 
+            background: transparent; 
+            border: 1px solid var(--primary); 
+            color: var(--primary); 
+        }
+        .btn-outline:hover { 
+            background: rgba(249, 115, 22, 0.15); 
+            color: #fff;
+        }
+
+        .token-display {
+            background: #090604;
+            border: 1px solid rgba(249, 115, 22, 0.25);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #fb923c;
+            word-break: break-all;
+            max-height: 60px;
+            overflow-y: auto;
+            margin-top: 6px;
+        }
+
+        .api-category {
+            margin-bottom: 12px;
+        }
+
+        .api-category:last-child {
+            margin-bottom: 0;
+        }
+
+        .api-category h4 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .public-badge { color: var(--accent-green); }
+        .protect-badge { color: var(--accent-gold); }
+        .private-badge { color: var(--accent-red); }
+
+        .api-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 7px;
+        }
+
+        .api-btn {
+            background: rgba(30, 20, 14, 0.7);
+            border: 1px solid rgba(249, 115, 22, 0.25);
+            color: var(--text-main);
+            padding: 7px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+
+        .api-btn:hover {
+            border-color: var(--primary);
+            background: rgba(249, 115, 22, 0.2);
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.2);
+        }
+
+        .terminal-box {
+            background: #070402;
+            border: 1px solid rgba(249, 115, 22, 0.35);
+            border-radius: 8px;
+            padding: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+            color: #fed7aa;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 0 15px rgba(249, 115, 22, 0.05);
+        }
+
+        .status-pill {
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .status-200 { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .status-401 { background: rgba(245, 158, 11, 0.2); color: var(--accent-gold); border: 1px solid var(--accent-gold); }
+        .status-403 { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+    </style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN / STARK HUD INTRO BOOT SEQUENCE (1.0s) -->
+<div id="splashScreen">
+    <button class="splash-skip-btn" onclick="dismissSplash()">[ ESC / SKIP ]</button>
+    <div class="splash-reactor-wrap">
+        <div class="reactor-ring-outer"></div>
+        <div class="reactor-ring-inner"></div>
+        <div class="reactor-core">⚡</div>
+    </div>
+    <div class="splash-title">STARK INDUSTRIES HUD</div>
+    <div class="splash-sub">QUINJET PROTOCOL INITIALIZATION v4.2</div>
+    
+    <div class="splash-progress-container">
+        <div class="splash-progress-bar" id="splashBar"></div>
+    </div>
+    
+    <div class="splash-log-text" id="splashLog">BOOTING SECURITY OS...</div>
+    <div id="soundHint" onclick="event.stopPropagation(); triggerFridayGreeting(true)" style="cursor: pointer; padding: 7px 18px; border: 1px dashed #f97316; border-radius: 20px; font-size: 12px; margin-top: 14px; color: #fed7aa; background: rgba(249, 115, 22, 0.2); animation: pulseGlow 1.2s infinite alternate; font-family: 'JetBrains Mono', monospace;">
+        🔊 คลิกหน้าจอหรือกดตรงนี้เพื่อเปิดเสียง F.R.I.D.A.Y.
+    </div>
+</div>
+
+<div class="container">
+    <header>
+        <div class="logo-title">
+            <span>🛡️</span> AVENGERS QUINJET ACCESS TERMINAL
+        </div>
+        <div class="subtitle">
+            CSI400 Web Services: JWT & OAuth 2.0 Security Architecture System
+            <br>
+            <div style="display:inline-flex; gap:10px; margin-top:8px;">
+                <button class="replay-splash-btn" onclick="replaySplash()">🎬 ดู Intro Splash Animation (1.0s)</button>
+                <button class="replay-splash-btn" onclick="triggerFridayGreeting(true)">🎙️ ทดสอบเสียง F.R.I.D.A.Y.</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid-layout-3col">
+        <!-- คอลัมน์ที่ 1 (ซ้ายสุด): F.R.I.D.A.Y. Terminal Output Console ขนาดใหญ่ -->
+        <div class="col-wrapper">
+            <div class="panel" style="height: 100%; display: flex; flex-direction: column; margin-bottom: 0;">
+                <div class="panel-title">
+                    <span>F.R.I.D.A.Y. Terminal Output Console:</span>
+                    <span id="responseStatusBadge" class="status-pill status-200">STANDBY</span>
+                </div>
+                <div class="terminal-box" id="terminalOutput" style="flex: 1; min-height: 480px;">// Select an API on the right to test response telemetry...</div>
+            </div>
+        </div>
+
+        <!-- คอลัมน์ที่ 2 (กลาง): Authentication & Token Center -->
+        <div class="col-wrapper">
+            <!-- OAuth GitHub Section -->
+            <div class="panel" style="margin-bottom: 12px;">
+                <div class="panel-title">
+                    <span>1. OAuth 2.0 Authorization</span>
+                    <span style="font-size: 11px; color: var(--accent-green);">Live Provider</span>
+                </div>
+                <a id="githubOAuthBtn" href="/auth/github" class="oauth-btn">
+                    <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                    </svg>
+                    Sign in with GitHub (OAuth 2.0)
+                </a>
+                <button class="api-btn" style="width:100%; text-align:center; padding: 7px 10px;" onclick="callApi('/auth/github/real-api')">
+                    🧪 ทดสอบดึง Real GitHub API (Public Data)
+                </button>
+            </div>
+
+            <!-- Login / Register Section -->
+            <div class="panel" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+                <div>
+                    <div class="panel-title">
+                        <span>2. User / Hero Authentication (JWT)</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Select Hero Preset (Quick Test):</label>
+                        <select id="presetSelect" onchange="applyPreset()">
+                            <option value="">-- เลือกรหัสทดสอบด่วน --</option>
+                            <option value="tonystark:ironman123">Tony Stark (Admin)</option>
+                            <option value="captain:shield123">Steve Rogers (User)</option>
+                            <option value="spiderman:web123">Peter Parker (User)</option>
+                            <option value="thor:hammer123">Thor Odinson (User)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hero / Codename (Username)</label>
+                        <input type="text" id="usernameInput" placeholder="e.g. tonystark">
+                    </div>
+                    <div class="form-group">
+                        <label>Passcode (Password)</label>
+                        <input type="password" id="passwordInput" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="roleInput">
+                            <option value="user">Crew Member (User)</option>
+                            <option value="admin">Avenger Leader (Admin)</option>
+                        </select>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="login()">Login (รับ Token)</button>
+                        <button class="btn btn-outline" onclick="register()">Register (ลงทะเบียน)</button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <label style="margin:0;">Active JWT Bearer Token:</label>
+                        <button onclick="clearToken()" style="background:none; border:none; color:var(--accent-red); font-size:11px; cursor:pointer;">ล้าง Token</button>
+                    </div>
+                    <div class="token-display" id="tokenDisplay">No token stored. Please Login or use GitHub OAuth.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- คอลัมน์ที่ 3 (ขวาสุด): API Command Deck ด้านบน + FRIDAY Pulse HUD ด้านล่าง -->
+        <div class="col-wrapper">
+            <div class="panel" style="margin-bottom: 12px;">
+                <div class="panel-title">
+                    <span>⚡ API Command Deck (ทดสอบ 9 Endpoints)</span>
+                </div>
+
+                <!-- 1. Public API -->
+                <div class="api-category">
+                    <h4><span class="public-badge">●</span> Public APIs (ไม่ต้องมี Token)</h4>
+                    <div class="api-buttons">
+                        <button class="api-btn" onclick="callApi('/api/public/info')">GET /public/info</button>
+                        <button class="api-btn" onclick="callApi('/api/public/categories')">GET /public/categories</button>
+                        <button class="api-btn" onclick="callApi('/api/public/heros')">GET /public/heros</button>
+                    </div>
+                </div>
+
+                <!-- 2. Protect API -->
+                <div class="api-category">
+                    <h4><span class="protect-badge">●</span> Protect APIs (ต้องมี JWT Token)</h4>
+                    <div style="display:flex; gap:6px; margin-bottom:8px;">
+                        <input type="text" id="favItemInput" placeholder="พิมพ์ชื่ออุปกรณ์ เช่น Mjolnir" value="Mjolnir" style="flex:1;">
+                        <button class="btn btn-primary" style="flex:none; padding:6px 12px; font-size:12px;" onclick="postCustomFavorite()">POST อุปกรณ์ลง DB</button>
+                    </div>
+                    <div class="api-buttons">
+                        <button class="api-btn" onclick="callApi('/api/protect/profile')">GET /protect/profile</button>
+                        <button class="api-btn" onclick="callApi('/api/protect/dashboard')">GET /protect/dashboard</button>
+                        <button class="api-btn" onclick="callApi('/api/protect/favorites')">GET /protect/favorites (ดึงจาก DB)</button>
+                    </div>
+                </div>
+
+                <!-- 3. Private API -->
+                <div class="api-category">
+                    <h4><span class="private-badge">●</span> Private APIs (Tony Stark / Admin เท่านั้น)</h4>
+                    <div class="api-buttons">
+                        <button class="api-btn" onclick="callApi('/api/private/users')">GET /private/users</button>
+                        <button class="api-btn" onclick="callApi('/api/private/system-logs')">GET /private/system-logs</button>
+                        <button class="api-btn" onclick="callApi('/api/private/users/2', 'DELETE')">DELETE /private/users/2</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- F.R.I.D.A.Y. Loop Pulse HUD Panel (ขวาล่าง ตามที่ผู้ใช้ขอ - เท่ากับ 2 คอลัมน์แรก ไม่ตกขอบ) -->
+            <div class="friday-hud-panel" id="fridayHudPanel" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <div class="hud-wrap" id="hudWrap">
+                    <div class="hud-pulse-ring"></div>
+                    <img src="./friday-hud.png" class="friday-hud-img" alt="F.R.I.D.A.Y. HUD">
+                </div>
+                <div class="hud-status-badge" id="hudStatusBadge">
+                    <span>●</span> <span id="hudStatusText">F.R.I.D.A.Y. AI STATUS: ONLINE</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ตรวจจับพอร์ตอัตโนมัติ: หากรันผ่าน Live Server (เช่น port 5500) ให้ชี้ API ไปที่ http://localhost:3000
+    const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
+
+    // ตรวจจับ Token จาก OAuth Callback (ถ้ามีส่งมาทาง URL ?token=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthTokenFromUrl = urlParams.get('token');
+    if (oauthTokenFromUrl) {
+        localStorage.setItem('token', oauthTokenFromUrl);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // อัปเดตลิงก์ GitHub OAuth ให้ถูกต้องตามพอร์ต
+    document.addEventListener('DOMContentLoaded', () => {
+        const ghBtn = document.getElementById('githubOAuthBtn');
+        if (ghBtn) ghBtn.href = `${API_BASE}/auth/github`;
+    });
+
+    function updateTokenDisplay() {
+        const token = localStorage.getItem('token');
+        const display = document.getElementById('tokenDisplay');
+        if (token) {
+            display.innerText = token;
+            display.style.color = '#38bdf8';
+        } else {
+            display.innerText = 'No token stored. Please Login or use GitHub OAuth.';
+            display.style.color = '#94a3b8';
+        }
+    }
+
+    function applyPreset() {
+        const val = document.getElementById('presetSelect').value;
+        if (!val) return;
+        const [u, p] = val.split(':');
+        document.getElementById('usernameInput').value = u;
+        document.getElementById('passwordInput').value = p;
+        document.getElementById('roleInput').value = (u === 'tonystark') ? 'admin' : 'user';
+    }
+
+    async function login() {
+        const username = document.getElementById('usernameInput').value;
+        const password = document.getElementById('passwordInput').value;
+
+        if (!username || !password) {
+            alert('กรุณากรอก Username และ Password');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const text = await res.text();
+            let data;
+            try { data = JSON.parse(text); } catch (e) { data = { message: text }; }
+            showOutput(res.status, data, 'POST /api/auth/login');
+
+            if (res.ok && data.token) {
+                localStorage.setItem('token', data.token);
+                updateTokenDisplay();
+            }
+        } catch (err) {
+            showOutput(500, { error: err.message }, 'POST /api/auth/login');
+        }
+    }
+
+    async function register() {
+        const username = document.getElementById('usernameInput').value;
+        const password = document.getElementById('passwordInput').value;
+        const role = document.getElementById('roleInput').value;
+
+        try {
+            const res = await fetch(`${API_BASE}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: username.toUpperCase() + ' (New Hero)',
+                    power: 'Cosmic Abilities',
+                    age: 25,
+                    username,
+                    password,
+                    role
+                })
+            });
+            const text = await res.text();
+            let data;
+            try { data = JSON.parse(text); } catch (e) { data = { message: text }; }
+            showOutput(res.status, data, 'POST /api/auth/register');
+        } catch (err) {
+            showOutput(500, { error: err.message }, 'POST /api/auth/register');
+        }
+    }
+
+    function clearToken() {
+        localStorage.removeItem('token');
+        updateTokenDisplay();
+        showOutput('INFO', { message: 'Token cleared from localStorage' });
+    }
+
+    function postCustomFavorite() {
+        const item = document.getElementById('favItemInput').value.trim() || 'Mjolnir';
+        callApi('/api/protect/favorites', 'POST', { favoriteItem: item });
+    }
+
+    async function callApi(url, method = 'GET', body = null) {
+        const token = localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const options = { method, headers };
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
+
+        try {
+            const targetUrl = `${API_BASE}${url}`;
+            const res = await fetch(targetUrl, options);
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                data = { message: text };
+            }
+            showOutput(res.status, data, `${method} ${url}`);
+        } catch (err) {
+            showOutput(500, { error: err.message }, `${method} ${url}`);
+        }
+    }
+
+    function showOutput(status, data, requestInfo = '') {
+        const terminal = document.getElementById('terminalOutput');
+        const badge = document.getElementById('responseStatusBadge');
+
+        let statusClass = 'status-200';
+        if (status === 401) statusClass = 'status-401';
+        if (status === 403 || status >= 500) statusClass = 'status-403';
+
+        badge.className = `status-pill ${statusClass}`;
+        badge.innerText = `HTTP ${status}`;
+
+        const timestamp = new Date().toLocaleTimeString();
+        terminal.innerText = `// [${timestamp}] Request: ${requestInfo || 'Auth Action'}\n// Response Status: ${status}\n\n` + JSON.stringify(data, null, 2);
+
+        // ตรวจสอบเงื่อนไข Access Denied (401 หรือ 403) ให้ F.R.I.D.A.Y. พูดเตือนทันที!
+        if (status === 401 || status === 403) {
+            triggerFridayAccessDenied();
+        } else if (status >= 200 && status < 300) {
+            triggerFridaySuccess();
+        }
+    }
+
+    // --- F.R.I.D.A.Y. ALERTS & VOICE RESPONSES ---
+    let fridayVoice = null;
+    function initVoices() {
+        if (!('speechSynthesis' in window)) return;
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || !voices.length) return;
+
+        // ค้นหาเสียงผู้หญิงภาษาอังกฤษ (เช่น Zira, Hazel, Samantha, Google UK/US Female)
+        fridayVoice = voices.find(v => 
+            v.lang.startsWith('en') && 
+            (v.name.includes('Zira') || v.name.includes('Hazel') || v.name.includes('Female') || 
+             v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Google') || 
+             v.name.includes('Natural') || v.name.includes('Eva'))
+        ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
+    }
+
+    if ('speechSynthesis' in window) {
+        initVoices();
+        window.speechSynthesis.onvoiceschanged = initVoices;
+    }
+
+    function playAlertTone() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(750, ctx.currentTime);
+            osc.frequency.setValueAtTime(420, ctx.currentTime + 0.15);
+
+            gain.gain.setValueAtTime(0.25, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.35);
+        } catch (e) {}
+    }
+
+    function playSciFiChime() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(320, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.25);
+
+            gain.gain.setValueAtTime(0.35, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.35);
+        } catch (e) {}
+    }
+
+    // ฟังก์ชันพูดเสียง F.R.I.D.A.Y. แบบรับประกันเสียงออก ไม่โดน Garbage Collection ตัดทิ้ง
+    function speakFriday(text = "Welcome back, Boss. Quinjet systems online.", force = false) {
+        if (!('speechSynthesis' in window)) return;
+
+        try {
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.resume();
+
+            if (!fridayVoice) initVoices();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.volume = 1.0; // เสียงดังเต็มระดับ (ลั่นชัดเจน)
+            utterance.rate = 1.05;
+            utterance.pitch = 1.18; // โทนเสียง AI หญิง
+            utterance.lang = 'en-US';
+            if (fridayVoice) utterance.voice = fridayVoice;
+
+            window._activeUtterance = utterance; // กัน browser GC ทิ้งกลางคัน
+            utterance.onend = () => { window._activeUtterance = null; };
+            utterance.onerror = (e) => { console.warn('Speech error:', e); };
+
+            window.speechSynthesis.speak(utterance);
+        } catch (e) {
+            console.warn('SpeechSynthesis exception:', e);
+        }
+    }
+
+    let greetingSpoken = false;
+    function triggerFridayGreeting(force = false) {
+        if (greetingSpoken && !force) return;
+        greetingSpoken = true;
+        playSciFiChime();
+        speakFriday("Welcome back, Boss. Quinjet systems online.", true);
+        const hint = document.getElementById('soundHint');
+        if (hint) hint.style.display = 'none';
+    }
+
+    function triggerFridayAccessDenied() {
+        // 1. ส่งเสียงแจ้งเตือนไซไฟ
+        playAlertTone();
+
+        // 2. F.R.I.D.A.Y. พูดเตือนทันที "Access Denied, Boss"
+        speakFriday("Access denied.", true);
+        // speakFriday("Access denied, Boss. Security clearance insufficient.", true);
+
+        // 3. ปรับ HUD ขวาล่างให้กลายเป็นสีแดงเตือนภัยกระพริบ
+        const hudWrap = document.getElementById('hudWrap');
+        const hudPanel = document.getElementById('fridayHudPanel');
+        const hudStatusText = document.getElementById('hudStatusText');
+        const hudStatusBadge = document.getElementById('hudStatusBadge');
+
+        if (hudWrap) hudWrap.classList.add('alert');
+        if (hudPanel) hudPanel.classList.add('alert-active');
+        if (hudStatusText) hudStatusText.innerText = 'ALERT: ACCESS DENIED // LEVEL INSUFFICIENT';
+        if (hudStatusBadge) hudStatusBadge.classList.add('alert-text');
+
+        // คืนค่ากลับสู่ปกติหลัง 4 วินาที
+        setTimeout(() => {
+            if (hudWrap) hudWrap.classList.remove('alert');
+            if (hudPanel) hudPanel.classList.remove('alert-active');
+            if (hudStatusText) hudStatusText.innerText = 'F.R.I.D.A.Y. AI STATUS: ONLINE';
+            if (hudStatusBadge) hudStatusBadge.classList.remove('alert-text');
+        }, 4000);
+    }
+
+    function triggerFridaySuccess() {
+        const hudStatusText = document.getElementById('hudStatusText');
+        if (hudStatusText) {
+            hudStatusText.innerText = 'COMMAND EXECUTED // CLEARANCE VERIFIED';
+            setTimeout(() => {
+                hudStatusText.innerText = 'F.R.I.D.A.Y. AI STATUS: ONLINE';
+            }, 3000);
+        }
+    }
+
+    // Init token display
+    updateTokenDisplay();
+
+    // เคลียร์เสียงค้างเมื่อปิดหรือรีเฟรชหน้า
+    window.addEventListener('beforeunload', () => {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+
+    // --- SPLASH SCREEN CONTROLLER (1.0 วินาทีพอดี!) ---
+    let splashInterval = null;
+
+    function initSplashScreen() {
+        const bar = document.getElementById('splashBar');
+        const log = document.getElementById('splashLog');
+        const splash = document.getElementById('splashScreen');
+        if (!splash) return;
+
+        // เมื่อเข้ามาหน้าเว็บจะยังไม่ลั่นเสียง (จะลั่นเสียงก็ต่อเมื่อผู้ใช้กดแตะในหน้า splash เท่านั้น)
+        greetingSpoken = false;
+
+        const bootLogs = [
+            'CONNECTING SATELLITE UPLINK...',
+            'INITIALIZING ARC REACTOR CORE...',
+            'LOADING F.R.I.D.A.Y. DEFENSE MATRIX...',
+            'AUTHENTICATING OAUTH 2.0 PROTOCOLS...',
+            'ACCESS GRANTED: AVENGERS QUINJET READY'
+        ];
+
+        let progress = 0;
+        let logIndex = 0;
+        if (bar) bar.style.width = '0%';
+        if (log) log.innerText = 'BOOTING SECURITY OS...';
+
+        clearInterval(splashInterval);
+
+        // 10ms x 100 steps = 1,000ms (1.0 วินาทีพอดีตามที่สั่ง!)
+        splashInterval = setInterval(() => {
+            progress += 1;
+            if (bar) bar.style.width = progress + '%';
+
+            if (progress % 20 === 0 && logIndex < bootLogs.length) {
+                if (log) log.innerText = bootLogs[logIndex++];
+            }
+
+            if (progress >= 100) {
+                clearInterval(splashInterval);
+                setTimeout(() => {
+                    dismissSplash();
+                }, 100);
+            }
+        }, 10);
+    }
+
+    function dismissSplash() {
+        clearInterval(splashInterval);
+        const splash = document.getElementById('splashScreen');
+        if (splash) splash.classList.add('hide');
+    }
+
+    function replaySplash() {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            splash.classList.remove('hide');
+            initSplashScreen();
+        }
+    }
+
+    // ต้องกดคลิก/แตะในหน้า Splash เท่านั้น เสียง F.R.I.D.A.Y. ถึงจะลั่น!
+    const splashEl = document.getElementById('splashScreen');
+    if (splashEl) {
+        splashEl.addEventListener('click', (e) => {
+            // หลีกเลี่ยงกรณีผู้ใช้กดปุ่ม Skip/ESC ไม่ให้ส่งเสียง
+            if (e.target.classList.contains('splash-skip-btn')) return;
+            triggerFridayGreeting(true);
+        });
+    }
+
+    // รัน Splash เริ่มต้น (ระยะเวลา 1.0 วินาที)
+    initSplashScreen();
+</script>
+
+</body>
+</html>
