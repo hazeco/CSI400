@@ -103,7 +103,7 @@ const validateLogin = [
     body('username')
         .trim()
         .notEmpty().withMessage('กรุณากรอก Username')
-        .isAlphanumeric().withMessage('Username ต้องเป็นตัวอักษรภาษาอังกฤษหรือตัวเลขเท่านั้น')
+        .matches(/^[a-zA-Z0-9_-]+$/).withMessage('Username ต้องเป็นตัวอักษรภาษาอังกฤษ ตัวเลข ขีดกลาง หรือขีดล่างเท่านั้น')
         .isLength({ min: 3, max: 50 }).withMessage('Username ต้องมีความยาว 3-50 ตัวอักษร'),
 
     body('password')

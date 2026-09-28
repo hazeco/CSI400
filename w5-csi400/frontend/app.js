@@ -102,7 +102,8 @@ async function quickLoginAs(username, password) {
             showNotification(`เข้าสู่ระบบสำเร็จในฐานะ ${data.user.name}`, 'success');
             loadDashboardData();
         } else {
-            showNotification(`Login ไม่สำเร็จ: ${data.message || data.error}`, 'danger');
+            const errMsg = data.details ? data.details.map(d => d.message).join(', ') : (data.message || data.error);
+            showNotification(`Login ไม่สำเร็จ: ${errMsg}`, 'danger');
         }
     } catch (err) {
         showNotification(`เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: ${err.message}`, 'danger');
