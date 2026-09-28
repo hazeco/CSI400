@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบการถือครองทรัพย์สิน | CSI400 Week 5 Web Security</title>
+    <meta name="description" content="ระบบตรวจสอบการถือครองทรัพย์สิน (หัวข้อ: ทรัพย์สินอื่นๆ) ป้องกันด้วย CORS, JWT, SQL Injection และ XSS ตามมาตรฐาน OWASP - CSI400 Web Services Week 5">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Main Header -->
+        <header class="page-header">
+            <div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span class="badge badge-primary">CSI400 Web Services</span>
+                    <span class="badge badge-success">Week 5: Web Security</span>
+                    <span class="badge" style="background:#4338ca; color:#c7d2fe;">หัวข้อ: ทรัพย์สินอื่นๆ (Other Assets)</span>
+                </div>
+                <h1>🏛️ ระบบตรวจสอบการถือครองทรัพย์สิน (Private Asset Ownership API)</h1>
+                <p class="subtitle">ระบบรักษาความปลอดภัย Web Services: ควบคุมการเข้าถึงด้วย CORS, ยืนยันตัวตนด้วย JWT, ป้องกัน SQLi และ XSS</p>
+            </div>
+            <nav class="nav-links">
+                <a href="banka.html" class="nav-btn">🏛️ Bank A Client</a>
+                <a href="bankb.html" class="nav-btn">🏦 Bank B Client</a>
+                <a href="hacker.html" class="nav-btn danger">💀 Hacker Simulation</a>
+            </nav>
+        </header>
+
+        <!-- API Base URL & Environment Config Bar -->
+        <div class="dashboard-card" style="padding:14px 20px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
+                    <span style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">📡 Backend API URL:</span>
+                    <input type="text" id="apiBaseInput" class="form-control" style="padding:6px 12px; font-size:0.85rem;" placeholder="http://localhost:3000 หรือ Deployed URL">
+                    <button class="btn btn-secondary btn-sm" onclick="saveApiBaseUrl()">💾 บันทึก URL</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span id="loginStatusBadge" class="badge badge-warning">กำลังตรวจสอบการล็อกอิน...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication & User Status -->
+        <div class="dashboard-card" style="padding:18px 24px; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div id="userProfileBar" style="flex:1;">
+                    <!-- Filled by app.js -->
+                </div>
+                <div id="quickLoginGroup" class="button-group">
+                    <span style="font-size:0.85rem; color:var(--text-secondary); align-self:center;">⚡ ล็อกอินด่วน:</span>
+                    <button class="btn btn-primary btn-sm" onclick="quickLoginAs('admin', 'admin123')">👑 System Admin</button>
+                    <button class="btn btn-accent btn-sm" onclick="quickLoginAs('bank_officer', 'officer123')">🏛️ Bank A Officer</button>
+                    <button class="btn btn-secondary btn-sm" onclick="quickLoginAs('partner_agent', 'partner123')">🏦 Bank B Partner</button>
+                </div>
+            </div>
+            <div style="margin-top:10px;">
+                <details style="font-size:0.82rem; color:var(--text-muted); cursor:pointer;">
+                    <summary>🔑 ดู JWT Bearer Token ปัจจุบัน</summary>
+                    <input type="text" id="currentTokenDisplay" class="input-code" readonly style="margin-top:6px;">
+                </details>
+            </div>
+        </div>
+
+        <!-- 4 Subcategories of "ทรัพย์สินอื่นๆ" (Other Assets) Stats Grid -->
+        <section class="stats-grid">
+            <!-- 1. Machinery -->
+            <div class="stat-card" id="card_machinery" onclick="filterByType('machinery')">
+                <div class="stat-icon">⚙️</div>
+                <div class="stat-title">1. เครื่องจักรและอุปกรณ์การผลิต</div>
+                <div class="stat-value" id="count_machinery">3 รายการ</div>
+                <div class="stat-sub" id="val_machinery">37.0 ล้านบาท (คลิกเพื่อกรอง)</div>
+            </div>
+
+            <!-- 2. Valuables -->
+            <div class="stat-card" id="card_valuable" onclick="filterByType('valuable')">
+                <div class="stat-icon">💎</div>
+                <div class="stat-title">2. ตู้เซฟ อัญมณี ทรัพย์สินมีค่า</div>
+                <div class="stat-value" id="count_valuable">3 รายการ</div>
+                <div class="stat-sub" id="val_valuable">50.8 ล้านบาท (คลิกเพื่อกรอง)</div>
+            </div>
+
+            <!-- 3. Financial -->
+            <div class="stat-card" id="card_financial" onclick="filterByType('financial')">
+                <div class="stat-icon">📈</div>
+                <div class="stat-title">3. สินทรัพย์ทางการเงิน</div>
+                <div class="stat-value" id="count_financial">3 รายการ</div>
+                <div class="stat-sub" id="val_financial">63.5 ล้านบาท (คลิกเพื่อกรอง)</div>
+            </div>
+
+            <!-- 4. Office -->
+            <div class="stat-card" id="card_office" onclick="filterByType('office')">
+                <div class="stat-icon">💻</div>
+                <div class="stat-title">4. ของใช้สำนักงานและคอมพิวเตอร์</div>
+                <div class="stat-value" id="count_office">3 รายการ</div>
+                <div class="stat-sub" id="val_office">12.1 ล้านบาท (คลิกเพื่อกรอง)</div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" id="tabBtn_assets" onclick="switchTab('assets')">📋 จัดการข้อมูลทรัพย์สิน (Asset CRUD)</button>
+            <button class="tab-btn" id="tabBtn_reports" onclick="switchTab('reports')">📊 รายงานสถิติ & สรุปข้อมูล (Reports)</button>
+            <button class="tab-btn" id="tabBtn_security" onclick="switchTab('security')">🛡️ ห้องทดสอบความปลอดภัย (Security Lab)</button>
+        </nav>
+
+        <!-- TAB 1: Assets Management (Production Management API) -->
+        <main id="tabContent_assets" class="tab-content active">
+            <div class="dashboard-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                    <div>
+                        <h2>รายการทรัพย์สินทั้งหมด (Asset Ownership Inquiry)</h2>
+                        <p class="desc">เรียกข้อมูลผ่าน Private API: <code>GET /api/assets</code> (ป้องกันด้วย CORS + JWT Token)</p>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-secondary btn-sm" onclick="loadAssetsTable()">🔄 รีเฟรชข้อมูล</button>
+                        <button class="btn btn-primary" onclick="openCreateModal()">➕ เพิ่มทรัพย์สินใหม่ (POST /api/assets)</button>
+                    </div>
+                </div>
+
+                <!-- Filter & Search Bar -->
+                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+                    <div style="flex:1; min-width:240px;">
+                        <input type="text" id="assetSearchInput" class="form-control" placeholder="🔍 ค้นหาด้วยชื่อ, รหัสทรัพย์สิน หรือ Serial Number..." onkeyup="if(event.key==='Enter') applySearch()">
+                    </div>
+                    <button class="btn btn-secondary" onclick="applySearch()">ค้นหา</button>
+                    <button class="btn btn-secondary" onclick="filterByType('')">ล้างตัวกรอง</button>
+                </div>
+
+                <!-- Assets Table -->
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>รหัสทรัพย์สิน</th>
+                                <th>ชื่อทรัพย์สิน</th>
+                                <th>ประเภท</th>
+                                <th>มูลค่าประเมิน</th>
+                                <th>ผู้ถือครอง (Owner)</th>
+                                <th>สถานะ</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assetsTableBody">
+                            <!-- Filled dynamically by app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB 2: Reports Center (PDF Page 26: Items 3, 4, 5) -->
+        <section id="tabContent_reports" class="tab-content">
+            <div class="dashboard-card">
+                <h2>📊 ระบบรายงานการถือครองทรัพย์สิน (Asset Reports Center)</h2>
+                <p class="desc">ทดสอบเรียก Report Endpoints ตามเงื่อนไขการประเมินผลโจทย์หน้า 26</p>
+
+                <div class="button-group" style="margin-bottom:20px;">
+                    <button class="btn btn-primary" onclick="runSummaryReport()">
+                        📈 1. รายงานสรุปภาพรวม (/api/reports/assets/summary)
+                    </button>
+                </div>
+
+                <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; margin-bottom:20px; background:var(--bg-card); padding:16px; border-radius:10px;">
+                    <div style="flex:1; min-width:220px;">
+                        <label style="font-size:0.85rem; color:var(--text-secondary); font-weight:600;">💎 2. ค้นหาทรัพย์สินมูลค่าสูง (High-Value Report):</label>
+                        <input type="number" id="minValInput" class="form-control" value="10000000" step="1000000" placeholder="มูลค่าขั้นต่ำ (บาท)">
+                    </div>
+                    <button class="btn btn-accent" onclick="runHighValueReport()">
+                        ค้นหาทรัพย์สินมูลค่าสูง (>= 10,000,000 ฿)
+                    </button>
+                </div>
+
+                <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; margin-bottom:20px; background:var(--bg-card); padding:16px; border-radius:10px;">
+                    <div style="flex:1; min-width:220px;">
+                        <label style="font-size:0.85rem; color:var(--text-secondary); font-weight:600;">👤 3. ค้นหาผู้ถือครองตามประเภท (Asset Type Ownership Report):</label>
+                        <select id="reportAssetTypeSelect" class="form-control">
+                            <option value="machinery">เครื่องจักรและอุปกรณ์การผลิต (machinery)</option>
+                            <option value="valuable">ตู้เซฟ อัญมณี หรือทรัพย์สินมีค่า (valuable)</option>
+                            <option value="financial">สินทรัพย์ทางการเงิน (financial)</option>
+                            <option value="office">ของใช้สำนักงานและคอมพิวเตอร์ (office)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="runOwnershipReport()">
+                        ค้นหาผู้ถือครองตามประเภท
+                    </button>
+                </div>
+
+                <div>
+                    <h3>ผลลัพธ์ข้อมูลรายงาน (JSON Response):</h3>
+                    <pre id="reportOutput" class="code-block">เลือกรายงานด้านบนเพื่อประมวลผลข้อมูลสดจากฐานข้อมูล SQLite...</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: Security Defense Lab (PDF Page 6-18) -->
+        <section id="tabContent_security" class="tab-content">
+            <!-- 1. CORS Simulator -->
+            <div class="dashboard-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>1. การทดสอบการควบคุมการเข้าถึงด้วย CORS (Cross-Origin Resource Sharing)</h2>
+                    <span id="corsSimStatus" class="badge">พร้อมทดสอบ</span>
+                </div>
+                <p class="desc">ทดสอบส่ง HTTP Request จำลองค่า Header <code>Origin</code> ตามสถานการณ์หน้า 24-26</p>
+                
+                <div class="button-group" style="margin-bottom:14px;">
+                    <button class="btn btn-accent" onclick="testCorsSimulator('http://localhost:5500')">
+                        ✅ ทดสอบ Origin: http://localhost:5500 (Dev Team - อนุญาต)
+                    </button>
+                    <button class="btn btn-accent" onclick="testCorsSimulator('https://api.banka.com')">
+                        ✅ ทดสอบ Origin: https://api.banka.com (Bank A - อนุญาต)
+                    </button>
+                    <button class="btn btn-accent" onclick="testCorsSimulator('https://api.bankb.com')">
+                        ✅ ทดสอบ Origin: https://api.bankb.com (Bank B - อนุญาต)
+                    </button>
+                    <button class="btn btn-danger" onclick="testCorsSimulator('https://www.hacker.com')">
+                        ❌ ทดสอบ Origin: https://www.hacker.com (บล็อก 403 Forbidden)
+                    </button>
+                </div>
+                <pre id="corsSimOutput" class="code-block">คลิกปุ่มเพื่อทดสอบนโยบาย CORS...</pre>
+            </div>
+
+            <!-- 2. XSS Defense Lab -->
+            <div class="dashboard-card">
+                <h2>2. การทดสอบการป้องกันช่องโหว่ XSS (Cross-Site Scripting)</h2>
+                <p class="desc">ทดสอบการกรองโค้ดอันตรายด้วย <code>express-validator</code> และ <code>sanitize-html</code> (PDF หน้า 9-11)</p>
+                <div class="form-group">
+                    <label>ข้อความทดสอบ (ลองพิมพ์โค้ด &lt;script&gt;alert('Hacked!');&lt;/script&gt; หรือแท็ก HTML):</label>
+                    <input type="text" id="xssTestInput" class="form-control" value="<script>alert('XSS Attack!');</script> เครื่องกลึง CNC ประสิทธิภาพสูง">
+                </div>
+                <button class="btn btn-primary" onclick="testXssDefense()">🧪 ส่งไปทดสอบการ Sanitizing</button>
+                <div style="margin-top:14px;">
+                    <pre id="xssOutput" class="code-block">ผลการทดสอบการ Sanitizing จะปรากฏที่นี่...</pre>
+                </div>
+            </div>
+
+            <!-- 3. SQL Injection Defense Lab -->
+            <div class="dashboard-card">
+                <h2>3. การทดสอบการป้องกันช่องโหว่ SQL Injection (SQLi)</h2>
+                <p class="desc">ทดสอบการใช้ Parameterized Query (Prepared Statement) เพื่อป้องกันการโจมตีฐานข้อมูล (PDF หน้า 12-17)</p>
+                <div class="form-group">
+                    <label>Payload ทดสอบ (เช่น ' OR '1'='1 หรือ ' UNION SELECT...):</label>
+                    <input type="text" id="sqliTestInput" class="form-control" value="' OR '1'='1">
+                </div>
+                <button class="btn btn-primary" onclick="testSqliDefense()">🧪 ส่ง Payload ทดสอบ Parameterized Query</button>
+                <div style="margin-top:14px;">
+                    <pre id="sqliOutput" class="code-block">ผลการทดสอบ Parameterized Query จะปรากฏที่นี่...</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modal for Add/Edit Asset -->
+        <div id="assetModal" class="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 id="modalTitle">➕ เพิ่มข้อมูลการถือครองทรัพย์สินใหม่</h3>
+                    <button class="close-btn" onclick="closeModal()">&times;</button>
+                </div>
+                <form id="assetForm">
+                    <div class="form-group">
+                        <label for="assetName">ชื่อทรัพย์สิน: <span style="color:#ef4444;">*</span></label>
+                        <input type="text" id="assetName" class="form-control" required placeholder="เช่น เครื่องกลึงอัตโนมัติ CNC 5 แกน">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group">
+                            <label for="assetType">ประเภทย่อย (ทรัพย์สินอื่นๆ): <span style="color:#ef4444;">*</span></label>
+                            <select id="assetType" class="form-control" required>
+                                <option value="machinery">เครื่องจักรและอุปกรณ์การผลิต</option>
+                                <option value="valuable">ตู้เซฟ อัญมณี หรือทรัพย์สินมีค่า</option>
+                                <option value="financial">สินทรัพย์ทางการเงิน (เงินฝาก หุ้น พันธบัตร)</option>
+                                <option value="office">ของใช้สำนักงาน เฟอร์นิเจอร์ คอมพิวเตอร์</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="assetValue">มูลค่าประเมิน (บาท): <span style="color:#ef4444;">*</span></label>
+                            <input type="number" id="assetValue" class="form-control" required min="0" step="1000" placeholder="เช่น 15000000">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group">
+                            <label for="assetCustomerId">รหัสผู้ถือครอง (Customer ID): <span style="color:#ef4444;">*</span></label>
+                            <select id="assetCustomerId" class="form-control" required>
+                                <option value="1">1 - นายสมศักดิ์ มหาทรัพย์เจริญ</option>
+                                <option value="2">2 - นางสาวแพรวา ธนบดี</option>
+                                <option value="3">3 - บริษัท สยามแอดวานซ์อินดัสทรี จำกัด</option>
+                                <option value="4">4 - นายกฤษฎา วัฒนพาณิชย์</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="assetStatus">สถานะการถือครอง:</label>
+                            <select id="assetStatus" class="form-control">
+                                <option value="active">active (ปกติ)</option>
+                                <option value="pledged">pledged (ติดจำนำ/ค้ำประกัน)</option>
+                                <option value="under_review">under_review (รอตรวจสอบ)</option>
+                                <option value="liquidated">liquidated (จำหน่ายแล้ว)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group">
+                            <label for="assetLocation">สถานที่จัดเก็บ / สถาบันการเงิน:</label>
+                            <input type="text" id="assetLocation" class="form-control" placeholder="เช่น โรงงานนิคมบางปู / ตู้เซฟธนาคาร">
+                        </div>
+                        <div class="form-group">
+                            <label for="assetSerial">หมายเลขเครื่อง / เลขที่สัญญา (Serial):</label>
+                            <input type="text" id="assetSerial" class="form-control" placeholder="เช่น CNC-2024-001">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="assetDescription">รายละเอียดทรัพย์สิน:</label>
+                        <textarea id="assetDescription" class="form-control" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติม (ระบบมี XSS Sanitizer กรองแท็กอันตรายอัตโนมัติ)"></textarea>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary">💾 บันทึกข้อมูลทรัพย์สิน</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="margin-top:40px; text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem; border-top:1px solid var(--border-color);">
+            <p>CSI400 Web Services (Week 5: Web Security - CORS, JWT, SQL Injection & XSS Prevention)</p>
+            <p style="margin-top:4px;">คณะเทคโนโลยีสารสนเทศ มหาวิทยาลัยศรีปทุม (SPU)</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

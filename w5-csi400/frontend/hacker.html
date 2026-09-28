@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacker Simulation - โดเมนไม่ได้รับอนุญาต (CSI400 Week 5)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .client-badge-hacker {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: #ffffff;
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .hacker-alert {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .hacker-alert h4 {
+            color: #f87171;
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body class="standalone-page hacker-theme">
+    <div class="page-container">
+        <header class="page-header">
+            <div class="header-content">
+                <span class="client-badge-hacker">Unauthorized Origin: Blocked</span>
+                <h1>💀 จำลองการโจมตีจาก: <code>https://www.hacker.com</code></h1>
+                <p class="subtitle">จำลอง Frontend โดเมนภายนอกที่ไม่ได้รับอนุญาต พยายามเข้าถึง Private Asset API (PDF หน้า 24, 26, 27)</p>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-btn">🏠 หน้าหลัก Dashboard</a>
+                <a href="banka.html" class="nav-btn">🏛️ จำลอง Bank A</a>
+                <a href="bankb.html" class="nav-btn">🏦 จำลอง Bank B</a>
+            </nav>
+        </header>
+
+        <main class="content-card">
+            <div class="hacker-alert">
+                <h4>🛡️ กฎความปลอดภัย CORS (Cross-Origin Resource Sharing)</h4>
+                <p>โดเมนนี้ไม่ได้อยู่ในรายการ <code>allowedDomains</code> ของเซิร์ฟเวอร์ (อนุญาตเฉพาะ <code>http://localhost:5500</code>, <code>https://api.banka.com</code>, <code>https://api.bankb.com</code>) หากเปิดหน้านี้ผ่าน Origin แปลกปลอม เบราว์เซอร์และเซิร์ฟเวอร์จะสั่ง <strong>Block / HTTP 403 Forbidden</strong> ทันที!</p>
+            </div>
+
+            <div class="card-section">
+                <h2>1. โจมตีพยายามดึงข้อมูลความลับ (Unauthorized Data Theft)</h2>
+                <div class="button-group">
+                    <button class="btn btn-danger" onclick="callHackerEndpoint('/api/private-data')">🚨 ขโมย /api/private-data (ไม่มี Token)</button>
+                    <button class="btn btn-danger" onclick="callHackerWithStolenToken()">🔓 แกล้งใช้ Stolen Token ดึงทรัพย์สินทั้งหมด</button>
+                    <button class="btn btn-secondary" onclick="simulateViaBackendTest()">🧪 ทดสอบส่ง Origin: https://www.hacker.com ผ่าน Simulator</button>
+                </div>
+            </div>
+
+            <div class="card-section">
+                <div class="response-header">
+                    <h3>ผลการตรวจสอบความปลอดภัย (CORS / Security Defense):</h3>
+                    <span id="responseStatus" class="badge badge-danger">Status: Blocked Expected</span>
+                </div>
+                <pre id="result" class="code-block text-danger">กดปุ่มเพื่อทดสอบการบล็อกของระบบ CORS และ JWT...</pre>
+            </div>
+
+            <div class="card-section">
+                <h3>🔍 คำอธิบายสิ่งที่เกิดขึ้นใน Browser Console:</h3>
+                <div class="code-block" style="background:#1e1e24; color:#cbd5e1; font-size:0.85rem;">
+Access to fetch at 'http://localhost:3000/api/private-data' from origin 'https://www.hacker.com' 
+has been blocked by CORS policy: Response to preflight request doesn't pass access control check: 
+No 'Access-Control-Allow-Origin' header is present on the requested resource.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin.includes('5500') 
+            ? 'http://localhost:3000' 
+            : (window.location.origin === 'http://localhost:3000' ? '' : window.location.origin);
+
+        async function callHackerEndpoint(endpoint) {
+            const statusEl = document.getElementById('responseStatus');
+            const resultEl = document.getElementById('result');
+            statusEl.innerText = 'กำลังพยายามเข้าถึง...';
+            statusEl.className = 'badge';
+
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await res.json();
+                resultEl.innerText = JSON.stringify(data, null, 2);
+
+                if (res.ok) {
+                    statusEl.className = 'badge badge-warning';
+                    statusEl.innerText = 'ทะลุผ่านได้ (ถ้าเปิดแบบ Same-origin เดียวกับ Backend)';
+                } else {
+                    statusEl.className = 'badge badge-danger';
+                    statusEl.innerText = `HTTP ${res.status}: ${data.error || 'ถูกบล็อก'}`;
+                }
+            } catch (err) {
+                statusEl.className = 'badge badge-danger';
+                statusEl.innerText = '❌ CORS Policy Blocked!';
+                resultEl.innerText = `[BROWSER CORS BLOCKED]\nError: ${err.message}\n\nคำอธิบาย: เบราว์เซอร์ทำการบล็อกตามนโยบาย Same-Origin Policy (SOP) เนื่องจากเซิร์ฟเวอร์ไม่อนุญาต Origin โดเมนนี้และไม่ส่ง Header "Access-Control-Allow-Origin" กลับมา`;
+            }
+        }
+
+        async function callHackerWithStolenToken() {
+            const stolenToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.stolen.signature";
+            const statusEl = document.getElementById('responseStatus');
+            const resultEl = document.getElementById('result');
+            statusEl.innerText = 'ส่ง Token ขโมยมา...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/assets`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${stolenToken}`
+                    }
+                });
+                const data = await res.json();
+                resultEl.innerText = JSON.stringify(data, null, 2);
+                statusEl.className = 'badge badge-danger';
+                statusEl.innerText = `HTTP ${res.status}: ${data.error}`;
+            } catch (err) {
+                statusEl.className = 'badge badge-danger';
+                statusEl.innerText = '❌ CORS Blocked / Network Error';
+                resultEl.innerText = 'Error: ' + err.message;
+            }
+        }
+
+        async function simulateViaBackendTest() {
+            const statusEl = document.getElementById('responseStatus');
+            const resultEl = document.getElementById('result');
+            statusEl.innerText = 'กำลังทดสอบจำลอง Header Origin...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/public/info`);
+                const data = await res.json();
+                resultEl.innerText = `รายการโดเมนที่ได้รับอนุญาตในระบบ (Allowed Origins):\n` +
+                    JSON.stringify(data.cors_whitelisted_domains, null, 2) +
+                    `\n\nสังเกต: "https://www.hacker.com" ไม่อยู่ในรายการ จึงถูกบล็อกแน่นอน 100% (HTTP 403 Forbidden)`;
+                statusEl.className = 'badge badge-danger';
+                statusEl.innerText = 'CORS Policy Verified';
+            } catch (err) {
+                resultEl.innerText = 'Error: ' + err.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: csi400-w5-asset-api
+    env: node
+    plan: free
+    rootDir: w5-csi400/backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:5500,https://api.banka.com,https://api.bankb.com

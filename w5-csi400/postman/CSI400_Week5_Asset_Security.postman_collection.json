@@ -1,0 +1,580 @@
+{
+  "info": {
+    "_postman_id": "c51400-w5-security-asset-collection",
+    "name": "CSI400 Week 5: Web Security & Private Asset API (Other Assets)",
+    "description": "Postman Collection สำหรับทดสอบงานปฏิบัติ CSI400 สัปดาห์ที่ 5 หัวข้อ Web Security: CORS, JWT, SQL Injection และ XSS (หัวข้อ: ทรัพย์สินอื่นๆ)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Authentication & System Info",
+      "item": [
+        {
+          "name": "1.1 Login as Admin (รับ JWT Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    pm.test('Status code is 200 and token received', function () {",
+                  "        pm.response.to.have.status(200);",
+                  "        pm.expect(jsonData.token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.2 Login as Bank A Officer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"bank_officer\",\n  \"password\": \"officer123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.3 System Health & Whitelist Info (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public", "info"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Security & CORS Tests",
+      "item": [
+        {
+          "name": "2.1 CORS Allow: Origin api.banka.com (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 and Access-Control-Allow-Origin is banka.com', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.response.to.have.header('Access-Control-Allow-Origin', 'https://api.banka.com');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "https://api.banka.com"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/private-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "private-data"]
+            }
+          }
+        },
+        {
+          "name": "2.2 CORS Allow: Origin localhost:5500 (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 and Access-Control-Allow-Origin is localhost:5500', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.response.to.have.header('Access-Control-Allow-Origin', 'http://localhost:5500');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:5500"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/private-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "private-data"]
+            }
+          }
+        },
+        {
+          "name": "2.3 CORS Blocked: Origin hacker.com (403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden for unauthorized hacker origin', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    pm.expect(pm.response.headers.get('Access-Control-Allow-Origin')).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "https://www.hacker.com"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/private-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "private-data"]
+            }
+          }
+        },
+        {
+          "name": "2.4 JWT Guard Test: Without Token (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized when token missing', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/private-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "private-data"]
+            }
+          }
+        },
+        {
+          "name": "2.5 XSS Defense: Sanitize HTML Script Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"comment\": \"<script>alert('XSS Attack!');</script> Hello! ปลอดภัย\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/security/test-xss",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "security", "test-xss"]
+            }
+          }
+        },
+        {
+          "name": "2.6 SQL Injection Defense: Parameterized Query Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"' OR '1'='1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/security/test-sqli",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "security", "test-sqli"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Production Management API (CRUD)",
+      "item": [
+        {
+          "name": "3.1 POST /api/assets (เพิ่มทรัพย์สินใหม่ พร้อมกัน XSS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"เครื่องตัดเลเซอร์ไฟเบอร์อัตโนมัติ 12kW <script>hack()</script>\",\n  \"asset_type\": \"machinery\",\n  \"value\": 14500000,\n  \"customer_id\": 3,\n  \"description\": \"เครื่องตัดเลเซอร์อุตสาหกรรมนำเข้าจากสวิตเซอร์แลนด์\",\n  \"location\": \"โรงงานสยามแอดวานซ์ ชลบุรี\",\n  \"serial_number\": \"LSR-CH-12KW-902\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets"]
+            }
+          }
+        },
+        {
+          "name": "3.2 PUT /api/assets/1 (แก้ไขข้อมูลทรัพย์สิน)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"เครื่องกลึงอัตโนมัติ CNC 5 แกน Precision High-Speed (ปรับปรุงล่าสุด)\",\n  \"asset_type\": \"machinery\",\n  \"value\": 19000000,\n  \"customer_id\": 3,\n  \"description\": \"อัปเกรดระบบหล่อเย็นและ AI Servo ควบคุมอัตโนมัติ\",\n  \"location\": \"โรงงานนิคมบางปู สมุทรปราการ\",\n  \"serial_number\": \"CNC-DE-889421-2024-REV2\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "1"]
+            }
+          }
+        },
+        {
+          "name": "3.3 GET /api/assets/1 (ดูรายละเอียดทรัพย์สินและเจ้าของ)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "1"]
+            }
+          }
+        },
+        {
+          "name": "3.4 POST /api/assets (ทดสอบ Validation: ค่าติดลบ -> 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 Bad Request on validation failure', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"asset_type\": \"invalid_type\",\n  \"value\": -500,\n  \"customer_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Asset Ownership Inquiry API",
+      "item": [
+        {
+          "name": "4.1 GET /api/assets (รายการทรัพย์สินทั้งหมด)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets"]
+            }
+          }
+        },
+        {
+          "name": "4.2 GET /api/customers (รายการลูกค้า/ผู้ถือครองทั้งหมด)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers"]
+            }
+          }
+        },
+        {
+          "name": "4.3 GET /api/customers/3/assets (ทรัพย์สินของ บ.สยามแอดวานซ์)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/3/assets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers", "3", "assets"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Asset Ownership Summary API",
+      "item": [
+        {
+          "name": "5.1 GET /api/reports/assets/summary (สรุปภาพรวมมูลค่าและประเภท)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/assets/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "assets", "summary"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. High-Value Asset Report API",
+      "item": [
+        {
+          "name": "6.1 GET /api/reports/assets/high-value?minValue=10000000 (> 10 ล้าน)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/assets/high-value?minValue=10000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "assets", "high-value"],
+              "query": [
+                {
+                  "key": "minValue",
+                  "value": "10000000"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Asset Type Ownership Report API",
+      "item": [
+        {
+          "name": "7.1 ค้นหาผู้ถือครองเครื่องจักร (?assetType=machinery)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/ownership?assetType=machinery",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "ownership"],
+              "query": [
+                {
+                  "key": "assetType",
+                  "value": "machinery"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "7.2 ค้นหาผู้ถือครองตู้เซฟ/อัญมณี (?assetType=valuable)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/ownership?assetType=valuable",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "ownership"],
+              "query": [
+                {
+                  "key": "assetType",
+                  "value": "valuable"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "7.3 ค้นหาผู้ถือครองสินทรัพย์การเงิน (?assetType=financial)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/ownership?assetType=financial",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "ownership"],
+              "query": [
+                {
+                  "key": "assetType",
+                  "value": "financial"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

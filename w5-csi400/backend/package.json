@@ -1,0 +1,30 @@
+{
+  "name": "w5-csi400-backend",
+  "version": "1.0.0",
+  "description": "CSI400 Week 5: Web Security - CORS, JWT, SQL Injection & XSS Prevention (Other Assets Topic)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "csi400",
+    "cors",
+    "jwt",
+    "xss",
+    "sql-injection",
+    "web-security"
+  ],
+  "author": "CSI400 Student",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "sanitize-html": "^2.14.0",
+    "sqlite3": "^6.0.1"
+  }
+}

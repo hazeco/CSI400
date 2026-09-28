@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank A Client - จำลองการเรียกจาก api.banka.com (CSI400 Week 5)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .client-badge-banka {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: #ffffff;
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="standalone-page">
+    <div class="page-container">
+        <header class="page-header">
+            <div class="header-content">
+                <span class="client-badge-banka">Authorized Client: Production Node</span>
+                <h1>🏛️ จำลองการเรียกจาก: <code>https://api.banka.com</code></h1>
+                <p class="subtitle">จำลอง Frontend โดเมนของ Bank A ในระบบตรวจสอบการถือครองทรัพย์สิน (Week 5: CORS & JWT)</p>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-btn">🏠 หน้าหลัก Dashboard</a>
+                <a href="bankb.html" class="nav-btn">🏢 จำลอง Bank B</a>
+                <a href="hacker.html" class="nav-btn danger">💀 จำลอง Hacker</a>
+            </nav>
+        </header>
+
+        <main class="content-card">
+            <div class="card-section">
+                <h2>1. ข้อมูลการยืนยันตัวตน (JWT Authentication)</h2>
+                <p class="desc">Private API ต้องมี JWT Token ในการยืนยันสิทธิ์เข้าถึงข้อมูล</p>
+                <div class="auth-box">
+                    <button class="btn btn-primary" onclick="quickLogin()">🔑 ล็อกอินดึง Token (Bank A Officer)</button>
+                    <span id="authStatus" class="status-indicator">ยังไม่ได้ล็อกอิน (No Token)</span>
+                </div>
+                <div class="token-preview" id="tokenPreviewContainer" style="display:none;">
+                    <label>JWT Token ปัจจุบัน:</label>
+                    <input type="text" id="tokenInput" readonly class="input-code">
+                </div>
+            </div>
+
+            <div class="card-section">
+                <h2>2. ทดสอบเรียก Private API</h2>
+                <div class="button-group">
+                    <button class="btn btn-accent" onclick="callPrivateData()">📡 เรียก /api/private-data (ตามโจทย์หน้า 25)</button>
+                    <button class="btn btn-secondary" onclick="callAssetSummary()">📊 ดูสรุปทรัพย์สินอื่นๆ (/api/reports/assets/summary)</button>
+                    <button class="btn btn-secondary" onclick="callHighValueAssets()">💎 ค้นหาทรัพย์สินมูลค่า > 10 ล้านบาท</button>
+                </div>
+            </div>
+
+            <div class="card-section">
+                <div class="response-header">
+                    <h3>ผลลัพธ์จากเซิร์ฟเวอร์ (API Response):</h3>
+                    <span id="responseStatus" class="badge">Status: Ready</span>
+                </div>
+                <pre id="result" class="code-block">กดปุ่มด้านบนเพื่อทดสอบส่งคำขอผ่าน CORS ไปยัง Backend API...</pre>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin.includes('5500') 
+            ? 'http://localhost:3000' 
+            : (window.location.origin === 'http://localhost:3000' ? '' : window.location.origin);
+
+        let authToken = localStorage.getItem('csi400_jwt_token') || '';
+
+        if (authToken) {
+            updateTokenUI(authToken);
+        }
+
+        async function quickLogin() {
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'bank_officer', password: 'officer123' })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    authToken = data.token;
+                    localStorage.setItem('csi400_jwt_token', authToken);
+                    updateTokenUI(authToken);
+                    document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+                    document.getElementById('responseStatus').className = 'badge badge-success';
+                    document.getElementById('responseStatus').innerText = 'HTTP 200: Login สำเร็จ';
+                } else {
+                    alert('Login ไม่สำเร็จ: ' + data.error);
+                }
+            } catch (err) {
+                document.getElementById('result').innerText = 'Error: ' + err.message;
+            }
+        }
+
+        function updateTokenUI(token) {
+            document.getElementById('authStatus').innerText = '✅ พร้อมใช้งาน (Logged In)';
+            document.getElementById('authStatus').className = 'status-indicator success';
+            document.getElementById('tokenPreviewContainer').style.display = 'block';
+            document.getElementById('tokenInput').value = token;
+        }
+
+        async function callPrivateData() {
+            callApiEndpoint('/api/private-data');
+        }
+
+        async function callAssetSummary() {
+            callApiEndpoint('/api/reports/assets/summary');
+        }
+
+        async function callHighValueAssets() {
+            callApiEndpoint('/api/reports/assets/high-value?minValue=10000000');
+        }
+
+        async function callApiEndpoint(endpoint) {
+            const statusEl = document.getElementById('responseStatus');
+            const resultEl = document.getElementById('result');
+            statusEl.innerText = 'กำลังส่ง Request...';
+            statusEl.className = 'badge';
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+
+                const res = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                const data = await res.json();
+                resultEl.innerText = JSON.stringify(data, null, 2);
+
+                if (res.ok) {
+                    statusEl.className = 'badge badge-success';
+                    statusEl.innerText = `HTTP ${res.status}: อนุญาต (CORS & JWT ผ่าน)`;
+                } else {
+                    statusEl.className = 'badge badge-danger';
+                    statusEl.innerText = `HTTP ${res.status}: ${data.error || 'ถูกปฏิเสธ'}`;
+                }
+            } catch (err) {
+                statusEl.className = 'badge badge-danger';
+                statusEl.innerText = 'CORS Error / Network Error';
+                resultEl.innerText = 'Error: ' + err.message + '\n\nหากเปิดตรงไฟล์อาจติด CORS หรือเซิร์ฟเวอร์ยังไม่ได้เปิด';
+            }
+        }
+    </script>
+</body>
+</html>
