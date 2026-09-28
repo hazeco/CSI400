@@ -1,16 +1,17 @@
 const cors = require('cors');
 
-// Domains explicitly required by lab instruction (Page 24 & 26)
+// Domains explicitly required by lab instruction (Page 24 & 26) + Strict Production Whitelist
 const defaultAllowedDomains = [
     'http://localhost:5500',    // Frontend สำหรับการทดสอบ Dev Team
     'https://api.banka.com',    // Production Client
     'https://api.bankb.com',    // Partner Client
+    'https://hazeco.github.io', // Production GitHub Pages Frontend (Strict Single-Domain Whitelist)
     'http://127.0.0.1:5500',    // Local dev alternative
     'http://localhost:3000',    // Direct host
     'http://127.0.0.1:3000'
 ];
 
-// Combine with environment variable if specified (e.g., custom deployed frontend or GitHub Pages)
+// Combine with environment variable if specified (e.g., custom deployed frontend)
 const envOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) 
     : [];
@@ -20,20 +21,8 @@ const allowedDomains = Array.from(new Set([...defaultAllowedDomains, ...envOrigi
 const isOriginAllowed = (origin) => {
     if (!origin) return true; // Postman, curl, direct server requests (PDF Page 20)
     
-    // Check exact match in allowed domains
-    if (allowedDomains.includes(origin)) return true;
-
-    // Support GitHub Pages domain (*.github.io) automatically for deployment
-    try {
-        const url = new URL(origin);
-        if (url.hostname.endsWith('.github.io')) {
-            return true;
-        }
-    } catch (e) {
-        // invalid URL
-    }
-
-    return false;
+    // Strict Whitelist (OWASP Standard): Check exact match only, no open wildcard (*.github.io)
+    return allowedDomains.includes(origin);
 };
 
 const corsOptions = {
