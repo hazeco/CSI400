@@ -9,9 +9,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20.18.0
       - key: PORT
         value: 10000
       - key: JWT_SECRET
         generateValue: true
       - key: ALLOWED_ORIGINS
-        value: http://localhost:5500,https://api.banka.com,https://api.bankb.com
+        value: http://localhost:5500,https://api.banka.com,https://api.bankb.com,https://hazeco.github.io
