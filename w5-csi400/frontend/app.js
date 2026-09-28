@@ -422,25 +422,29 @@ async function runOwnershipReport() {
 async function testCorsSimulator(simulatedOrigin) {
     const statusEl = document.getElementById('corsSimStatus');
     const outEl = document.getElementById('corsSimOutput');
-    outEl.innerText = `กำลังทดสอบจำลองส่ง Request พร้อม Origin: "${simulatedOrigin}"...`;
+    outEl.innerText = `กำลังส่ง Origin: "${simulatedOrigin}" ไปตรวจสอบกับ CORS Middleware ของเซิร์ฟเวอร์...`;
 
     try {
-        const res = await fetch(`${API_BASE}/api/public/info`, {
-            method: 'GET',
+        const res = await fetch(`${API_BASE}/api/security/simulate-cors`, {
+            method: 'POST',
             headers: {
-                'Origin': simulatedOrigin
-            }
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ origin: simulatedOrigin })
         });
 
         const data = await res.json();
         outEl.innerText = JSON.stringify(data, null, 2);
 
-        if (res.ok) {
+        if (res.status === 200) {
             statusEl.className = 'badge badge-success';
-            statusEl.innerText = `HTTP ${res.status} OK: ได้รับอนุญาต (Origin Whitelisted)`;
-        } else {
+            statusEl.innerText = `HTTP 200 OK: ได้รับอนุญาต (Whitelisted)`;
+        } else if (res.status === 403) {
             statusEl.className = 'badge badge-danger';
-            statusEl.innerText = `HTTP ${res.status}: ถูกบล็อกโดย CORS Middleware!`;
+            statusEl.innerText = `HTTP 403 Forbidden: ถูกบล็อกโดย CORS Middleware!`;
+        } else {
+            statusEl.className = 'badge badge-warning';
+            statusEl.innerText = `HTTP ${res.status}`;
         }
     } catch (err) {
         statusEl.className = 'badge badge-danger';

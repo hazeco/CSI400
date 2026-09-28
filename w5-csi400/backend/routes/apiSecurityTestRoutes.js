@@ -17,6 +17,38 @@ router.get('/private-data', authenticateToken, (req, res) => {
     });
 });
 
+// 1.1 POST /api/security/simulate-cors - จำลองการตรวจสอบ CORS Origin สำหรับการทดสอบบน Frontend Dashboard
+router.post('/security/simulate-cors', (req, res) => {
+    const testOrigin = req.body.origin;
+    const { isOriginAllowed, allowedDomains } = require('../middleware/corsMiddleware');
+
+    if (!testOrigin) {
+        return res.status(400).json({ error: 'Origin is required' });
+    }
+
+    if (isOriginAllowed(testOrigin)) {
+        return res.status(200).json({
+            status: 200,
+            message: `Origin "${testOrigin}" ได้รับอนุญาต (Whitelisted) ผ่านการตรวจสอบ CORS สำเร็จ`,
+            origin: testOrigin,
+            allowed: true,
+            cors_header_sent: {
+                'Access-Control-Allow-Origin': testOrigin,
+                'Access-Control-Allow-Credentials': 'true'
+            }
+        });
+    } else {
+        return res.status(403).json({
+            error: 'Access denied: CORS policy does not allow this origin',
+            attemptedOrigin: testOrigin,
+            status: 403,
+            allowed: false,
+            cors_header_sent: null,
+            allowedDomainsSample: allowedDomains.slice(0, 3)
+        });
+    }
+});
+
 // 2. POST /api/security/test-xss - Endpoint สาธิตการทดสอบและป้องกัน XSS (หน้า 10-11)
 router.post('/test-xss', (req, res) => {
     const rawComment = req.body.comment || '';
