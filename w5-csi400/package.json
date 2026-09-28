@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "CSI400 Week 5: Web Security - CORS, JWT, SQL Injection & XSS (Other Assets)",
   "main": "server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node --watch backend/server.js"
@@ -25,5 +28,8 @@
     "jsonwebtoken": "^9.0.2",
     "sanitize-html": "^2.14.0",
     "sqlite3": "^6.0.1"
+  },
+  "overrides": {
+    "htmlparser2": "9.1.0"
   }
 }

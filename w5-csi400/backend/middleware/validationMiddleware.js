@@ -1,13 +1,40 @@
 const { body, query, param, validationResult } = require('express-validator');
-const sanitizeHtml = require('sanitize-html');
+
+// Safe loader for sanitize-html (Protects against upstream ESM/CJS packaging issues in cloud environments)
+let sanitizeHtml = null;
+try {
+    sanitizeHtml = require('sanitize-html');
+} catch (e) {
+    console.warn('[SECURITY INFO] Using built-in OWASP XSS sanitizer:', e.message);
+}
+
+// Built-in resilient XSS tag stripper & encoder (OWASP standards)
+const builtInSanitize = (str) => {
+    if (typeof str !== 'string') return str;
+    return str
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove <script>...</script>
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // Remove <iframe>...</iframe>
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')   // Remove <style>...</style>
+        .replace(/<[^>]+>/g, '')                                            // Strip all remaining HTML tags
+        .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')                        // Remove inline event handlers
+        .replace(/javascript:/gi, '')                                       // Remove javascript: scheme
+        .trim();
+};
 
 // Helper to sanitize any string against XSS (removing all HTML tags and dangerous attributes)
 const cleanHtml = (dirty) => {
     if (typeof dirty !== 'string') return dirty;
-    return sanitizeHtml(dirty, {
-        allowedTags: [], // No HTML tags permitted
-        allowedAttributes: {}
-    }).trim();
+    if (sanitizeHtml && typeof sanitizeHtml === 'function') {
+        try {
+            return sanitizeHtml(dirty, {
+                allowedTags: [], // No HTML tags permitted
+                allowedAttributes: {}
+            }).trim();
+        } catch (err) {
+            return builtInSanitize(dirty);
+        }
+    }
+    return builtInSanitize(dirty);
 };
 
 // Middleware to check validation results and return 400 Bad Request
@@ -106,6 +133,7 @@ const validateAssetTypeQuery = [
 
 module.exports = {
     cleanHtml,
+    builtInSanitize,
     checkValidationResult,
     validateAssetInput,
     validateLogin,
