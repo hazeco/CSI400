@@ -36,6 +36,13 @@
         </header>
 
         <main class="content-card">
+            <!-- API Base URL Bar -->
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; background:var(--bg-card); padding:12px 16px; border-radius:10px; flex-wrap:wrap;">
+                <span style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">📡 Backend API URL:</span>
+                <input type="text" id="apiBaseInput" class="form-control" style="padding:6px 12px; font-size:0.85rem; flex:1; min-width:260px;" placeholder="https://csi400-9gc0.onrender.com หรือ http://localhost:3000">
+                <button class="btn btn-secondary btn-sm" onclick="saveApiBaseUrl()">💾 บันทึก URL</button>
+            </div>
+
             <div class="card-section">
                 <h2>1. ข้อมูลการยืนยันตัวตน (JWT Authentication)</h2>
                 <p class="desc">Private API ต้องมี JWT Token ในการยืนยันสิทธิ์เข้าถึงข้อมูล</p>
@@ -43,7 +50,7 @@
                     <button class="btn btn-primary" onclick="quickLogin()">🔑 ล็อกอินดึง Token (Bank A Officer)</button>
                     <span id="authStatus" class="status-indicator">ยังไม่ได้ล็อกอิน (No Token)</span>
                 </div>
-                <div class="token-preview" id="tokenPreviewContainer" style="display:none;">
+                <div class="token-preview" id="tokenPreviewContainer" style="display:none; margin-top:12px;">
                     <label>JWT Token ปัจจุบัน:</label>
                     <input type="text" id="tokenInput" readonly class="input-code">
                 </div>
@@ -69,17 +76,33 @@
     </div>
 
     <script>
-        const API_BASE = window.location.origin.includes('5500') 
-            ? 'http://localhost:3000' 
-            : (window.location.origin === 'http://localhost:3000' ? '' : window.location.origin);
+        let API_BASE = localStorage.getItem('csi400_api_base') || 
+            (window.location.origin.includes('github.io') ? 'https://csi400-9gc0.onrender.com' : 'http://localhost:3000');
 
         let authToken = localStorage.getItem('csi400_jwt_token') || '';
 
-        if (authToken) {
-            updateTokenUI(authToken);
+        document.addEventListener('DOMContentLoaded', () => {
+            const apiInput = document.getElementById('apiBaseInput');
+            if (apiInput) apiInput.value = API_BASE;
+            if (authToken) {
+                updateTokenUI(authToken);
+            }
+        });
+
+        function saveApiBaseUrl() {
+            const apiInput = document.getElementById('apiBaseInput');
+            if (apiInput && apiInput.value) {
+                API_BASE = apiInput.value.trim().replace(/\/$/, '');
+                localStorage.setItem('csi400_api_base', API_BASE);
+                alert('บันทึก Backend API URL: ' + API_BASE);
+            }
         }
 
         async function quickLogin() {
+            const statusEl = document.getElementById('responseStatus');
+            statusEl.innerText = 'กำลังส่ง Request ล็อกอิน...';
+            statusEl.className = 'badge';
+
             try {
                 const res = await fetch(`${API_BASE}/api/auth/login`, {
                     method: 'POST',
@@ -92,13 +115,18 @@
                     localStorage.setItem('csi400_jwt_token', authToken);
                     updateTokenUI(authToken);
                     document.getElementById('result').innerText = JSON.stringify(data, null, 2);
-                    document.getElementById('responseStatus').className = 'badge badge-success';
-                    document.getElementById('responseStatus').innerText = 'HTTP 200: Login สำเร็จ';
+                    statusEl.className = 'badge badge-success';
+                    statusEl.innerText = 'HTTP 200: Login สำเร็จ';
                 } else {
-                    alert('Login ไม่สำเร็จ: ' + data.error);
+                    const errMsg = data.details ? data.details.map(d => d.message).join(', ') : (data.message || data.error);
+                    alert('Login ไม่สำเร็จ: ' + errMsg);
+                    statusEl.className = 'badge badge-danger';
+                    statusEl.innerText = 'HTTP ' + res.status + ' Error';
                 }
             } catch (err) {
-                document.getElementById('result').innerText = 'Error: ' + err.message;
+                document.getElementById('result').innerText = 'Error: ' + err.message + '\n\nตรวจสอบว่า URL ถูกต้องและเซิร์ฟเวอร์เปิดอยู่ (API_BASE: ' + API_BASE + ')';
+                statusEl.className = 'badge badge-danger';
+                statusEl.innerText = 'Network Error';
             }
         }
 
@@ -150,8 +178,8 @@
                 }
             } catch (err) {
                 statusEl.className = 'badge badge-danger';
-                statusEl.innerText = 'CORS Error / Network Error';
-                resultEl.innerText = 'Error: ' + err.message + '\n\nหากเปิดตรงไฟล์อาจติด CORS หรือเซิร์ฟเวอร์ยังไม่ได้เปิด';
+                statusEl.innerText = 'Network / CORS Error';
+                resultEl.innerText = 'Error: ' + err.message + '\n\n(API Target: ' + API_BASE + endpoint + ')';
             }
         }
     </script>

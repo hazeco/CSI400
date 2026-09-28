@@ -18,6 +18,14 @@
             font-weight: 600;
             display: inline-block;
         }
+        .partner-notice {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            font-size: 0.88rem;
+        }
     </style>
 </head>
 <body class="standalone-page">
@@ -36,24 +44,36 @@
         </header>
 
         <main class="content-card">
+            <!-- API Base URL Bar -->
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; background:var(--bg-card); padding:12px 16px; border-radius:10px; flex-wrap:wrap;">
+                <span style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">📡 Backend API URL:</span>
+                <input type="text" id="apiBaseInput" class="form-control" style="padding:6px 12px; font-size:0.85rem; flex:1; min-width:260px;" placeholder="https://csi400-9gc0.onrender.com หรือ http://localhost:3000">
+                <button class="btn btn-secondary btn-sm" onclick="saveApiBaseUrl()">💾 บันทึก URL</button>
+            </div>
+
+            <div class="partner-notice">
+                ℹ️ <strong>ขอบเขตสิทธิ์ตามเอกสารหน้า 26:</strong> Bank B (Partner Client) ได้รับอนุญาตให้ <strong>"ค้นหาและดูรายงาน" (Inquiry & Reports API)</strong> เท่านั้น เช่น ตรวจสอบทรัพย์สินของตนเองหรือดูสถิติภาพรวม <em>(ไม่มีสิทธิ์แก้ไขหรือลบข้อมูลของระบบ ซึ่งสงวนไว้เฉพาะ System Admin / Production Staff)</em>
+            </div>
+
             <div class="card-section">
                 <h2>1. ข้อมูลการยืนยันตัวตน (JWT Authentication)</h2>
                 <div class="auth-box">
                     <button class="btn btn-primary" onclick="quickLogin()">🔑 ล็อกอินดึง Token (Bank B Partner)</button>
                     <span id="authStatus" class="status-indicator">ยังไม่ได้ล็อกอิน (No Token)</span>
                 </div>
-                <div class="token-preview" id="tokenPreviewContainer" style="display:none;">
+                <div class="token-preview" id="tokenPreviewContainer" style="display:none; margin-top:12px;">
                     <label>JWT Token ปัจจุบัน:</label>
                     <input type="text" id="tokenInput" readonly class="input-code">
                 </div>
             </div>
 
             <div class="card-section">
-                <h2>2. ทดสอบเรียกบริการตรวจเช็คสิทธิ์การถือครอง</h2>
+                <h2>2. ทดสอบเรียกบริการตรวจเช็คสิทธิ์การถือครอง (Inquiry & Reports)</h2>
                 <div class="button-group">
                     <button class="btn btn-accent" onclick="callOwnershipMachinery()">⚙️ ดูผู้ถือครองเครื่องจักรโรงงาน (?assetType=machinery)</button>
                     <button class="btn btn-secondary" onclick="callOwnershipFinancial()">📈 ดูผู้ถือครองสินทรัพย์การเงิน (?assetType=financial)</button>
                     <button class="btn btn-secondary" onclick="callCustomerAssets(3)">🏭 ดูทรัพย์สินของ บ.สยามแอดวานซ์ (ID: 3)</button>
+                    <button class="btn btn-secondary" onclick="callAssetSummary()">📊 ดูรายงานสรุป (/api/reports/assets/summary)</button>
                 </div>
             </div>
 
@@ -68,17 +88,33 @@
     </div>
 
     <script>
-        const API_BASE = window.location.origin.includes('5500') 
-            ? 'http://localhost:3000' 
-            : (window.location.origin === 'http://localhost:3000' ? '' : window.location.origin);
+        let API_BASE = localStorage.getItem('csi400_api_base') || 
+            (window.location.origin.includes('github.io') ? 'https://csi400-9gc0.onrender.com' : 'http://localhost:3000');
 
         let authToken = localStorage.getItem('csi400_jwt_token') || '';
 
-        if (authToken) {
-            updateTokenUI(authToken);
+        document.addEventListener('DOMContentLoaded', () => {
+            const apiInput = document.getElementById('apiBaseInput');
+            if (apiInput) apiInput.value = API_BASE;
+            if (authToken) {
+                updateTokenUI(authToken);
+            }
+        });
+
+        function saveApiBaseUrl() {
+            const apiInput = document.getElementById('apiBaseInput');
+            if (apiInput && apiInput.value) {
+                API_BASE = apiInput.value.trim().replace(/\/$/, '');
+                localStorage.setItem('csi400_api_base', API_BASE);
+                alert('บันทึก Backend API URL: ' + API_BASE);
+            }
         }
 
         async function quickLogin() {
+            const statusEl = document.getElementById('responseStatus');
+            statusEl.innerText = 'กำลังส่ง Request ล็อกอิน...';
+            statusEl.className = 'badge';
+
             try {
                 const res = await fetch(`${API_BASE}/api/auth/login`, {
                     method: 'POST',
@@ -91,13 +127,18 @@
                     localStorage.setItem('csi400_jwt_token', authToken);
                     updateTokenUI(authToken);
                     document.getElementById('result').innerText = JSON.stringify(data, null, 2);
-                    document.getElementById('responseStatus').className = 'badge badge-success';
-                    document.getElementById('responseStatus').innerText = 'HTTP 200: Login สำเร็จ';
+                    statusEl.className = 'badge badge-success';
+                    statusEl.innerText = 'HTTP 200: Login สำเร็จ';
                 } else {
-                    alert('Login ไม่สำเร็จ: ' + data.error);
+                    const errMsg = data.details ? data.details.map(d => d.message).join(', ') : (data.message || data.error);
+                    alert('Login ไม่สำเร็จ: ' + errMsg);
+                    statusEl.className = 'badge badge-danger';
+                    statusEl.innerText = 'HTTP ' + res.status + ' Error';
                 }
             } catch (err) {
-                document.getElementById('result').innerText = 'Error: ' + err.message;
+                document.getElementById('result').innerText = 'Error: ' + err.message + '\n\nตรวจสอบว่า URL ถูกต้องและเซิร์ฟเวอร์เปิดอยู่ (API_BASE: ' + API_BASE + ')';
+                statusEl.className = 'badge badge-danger';
+                statusEl.innerText = 'Network Error';
             }
         }
 
@@ -118,6 +159,10 @@
 
         async function callCustomerAssets(customerId) {
             callApiEndpoint(`/api/customers/${customerId}/assets`);
+        }
+
+        async function callAssetSummary() {
+            callApiEndpoint('/api/reports/assets/summary');
         }
 
         async function callApiEndpoint(endpoint) {
@@ -149,8 +194,8 @@
                 }
             } catch (err) {
                 statusEl.className = 'badge badge-danger';
-                statusEl.innerText = 'CORS Error / Network Error';
-                resultEl.innerText = 'Error: ' + err.message;
+                statusEl.innerText = 'Network / CORS Error';
+                resultEl.innerText = 'Error: ' + err.message + '\n\n(API Target: ' + API_BASE + endpoint + ')';
             }
         }
     </script>

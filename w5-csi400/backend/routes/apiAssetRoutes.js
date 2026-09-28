@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { dbRun, dbGet, dbAll } = require('../db');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken, requireRole } = require('../middleware/authMiddleware');
 const { validateAssetInput } = require('../middleware/validationMiddleware');
 
 // Mapping type key to Thai title for "ทรัพย์สินอื่นๆ"
@@ -102,8 +102,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// 3. POST /api/assets - Production Management API: เพิ่มข้อมูลการถือครองทรัพย์สิน (ป้องกัน XSS + SQL Injection)
-router.post('/', validateAssetInput, async (req, res) => {
+// 3. POST /api/assets - Production Management API: เพิ่มข้อมูลการถือครองทรัพย์สิน (เจ้าหน้าที่ระบบ / Admin / Officer เท่านั้น)
+router.post('/', requireRole(['admin', 'officer']), validateAssetInput, async (req, res) => {
     const {
         name,
         asset_type,
@@ -179,8 +179,8 @@ router.post('/', validateAssetInput, async (req, res) => {
     }
 });
 
-// 4. PUT /api/assets/:id - Production Management API: แก้ไขข้อมูลการถือครองทรัพย์สิน (ตรวจสอบข้อมูลก่อนบันทึก)
-router.put('/:id', validateAssetInput, async (req, res) => {
+// 4. PUT /api/assets/:id - Production Management API: แก้ไขข้อมูลการถือครองทรัพย์สิน (เจ้าหน้าที่ระบบ / Admin / Officer เท่านั้น)
+router.put('/:id', requireRole(['admin', 'officer']), validateAssetInput, async (req, res) => {
     const assetId = parseInt(req.params.id, 10);
     if (isNaN(assetId)) {
         return res.status(400).json({ error: 'Invalid asset ID parameter' });
@@ -266,8 +266,8 @@ router.put('/:id', validateAssetInput, async (req, res) => {
     }
 });
 
-// 5. DELETE /api/assets/:id - ลบรายการทรัพย์สิน
-router.delete('/:id', async (req, res) => {
+// 5. DELETE /api/assets/:id - ลบรายการทรัพย์สิน (เฉพาะ Admin สูงสุดเท่านั้น)
+router.delete('/:id', requireRole(['admin']), async (req, res) => {
     const assetId = parseInt(req.params.id, 10);
     if (isNaN(assetId)) {
         return res.status(400).json({ error: 'Invalid asset ID parameter' });
