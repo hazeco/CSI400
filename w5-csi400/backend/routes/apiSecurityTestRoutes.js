@@ -49,8 +49,8 @@ router.post('/security/simulate-cors', (req, res) => {
     }
 });
 
-// 2. POST /api/security/test-xss - Endpoint สาธิตการทดสอบและป้องกัน XSS (หน้า 10-11)
-router.post('/test-xss', (req, res) => {
+// 2. POST /api/security/test-xss & /api/test-xss - Endpoint สาธิตการทดสอบและป้องกัน XSS (หน้า 10-11)
+router.post(['/test-xss', '/security/test-xss'], (req, res) => {
     const rawComment = req.body.comment || '';
     const rawUsername = req.body.username || '';
 
@@ -81,8 +81,8 @@ router.post('/test-xss', (req, res) => {
     });
 });
 
-// 3. POST /api/security/test-sqli - Endpoint สาธิตการทดสอบและป้องกัน SQL Injection (หน้า 12-17)
-router.post('/test-sqli', async (req, res) => {
+// 3. POST /api/security/test-sqli & /api/security/test-sqli - Endpoint สาธิตการทดสอบและป้องกัน SQL Injection (หน้า 12-17)
+router.post(['/test-sqli', '/security/test-sqli'], async (req, res) => {
     const testUsername = req.body.username || '';
     const isPayloadAttempt = testUsername.includes("'") || testUsername.toLowerCase().includes("or") || testUsername.includes("--");
 
