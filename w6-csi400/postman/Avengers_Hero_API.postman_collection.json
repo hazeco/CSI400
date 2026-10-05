@@ -1,0 +1,386 @@
+{
+  "info": {
+    "_postman_id": "avengers-hero-api-collection-w6",
+    "name": "Avengers Hero API Test Collection (Week 6)",
+    "description": "CSI400 Web Services - Week 6: API Testing with Postman & Chai Scripting. Covers Authentication, Full Hero CRUD, Negative Scenarios (400, 401, 404), and Telemetry.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "POST /api/auth/login - Admin Login (Tony Stark)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Status code test (PDF slide 3)",
+                  "pm.test(\"Status is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Response is JSON test (PDF slide 3)",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.response.to.have.header(\"Content-Type\");",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "",
+                  "// Field & Token checks (PDF slide 3)",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has token and user details\", function () {",
+                  "    pm.expect(json).to.have.property(\"token\");",
+                  "    pm.expect(json).to.have.property(\"user\");",
+                  "    pm.expect(json.user).to.have.property(\"username\").that.equals(\"tonystark\");",
+                  "});",
+                  "",
+                  "// Save token for next requests (PDF slide 3)",
+                  "if (json.token) {",
+                  "    pm.environment.set(\"authToken\", json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tonystark\",\n  \"password\": \"ironman123\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/login",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/auth/me - Verify Protected Access (with Token)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Dynamic Auth Header Injection (PDF slide 3)",
+                  "const token = pm.environment.get(\"authToken\");",
+                  "if (token) {",
+                  "    pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + token });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Token user identity verified\", function () {",
+                  "    pm.expect(json.user.username).to.equal(\"tonystark\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/me",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/auth/login - Negative Test (Invalid Password -> 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Negative test assertion (PDF slide 9)",
+                  "pm.test(\"Status is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Returns error message property\", function () {",
+                  "    pm.expect(json).to.have.property(\"error\", \"Unauthorized\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tonystark\",\n  \"password\": \"incorrect_pass_xxx\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/login",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Hero Management (CRUD)",
+      "item": [
+        {
+          "name": "GET /api/heroes - Get All Heroes (List)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Response contains heroes array\", function () {",
+                  "    pm.expect(json).to.have.property(\"heroes\");",
+                  "    pm.expect(json.heroes).to.be.an(\"array\");",
+                  "    pm.expect(json.count).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/heroes",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "heroes"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/heroes/1 - Get Hero By ID (Tony Stark)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Hero details match Tony Stark\", function () {",
+                  "    pm.expect(json.hero.id).to.equal(1);",
+                  "    pm.expect(json.hero.codename).to.equal(\"Iron Man\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/heroes/1",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "heroes", "1"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/heroes - Create New Hero (Wolverine)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Created hero has valid ID\", function () {",
+                  "    pm.expect(json.hero).to.have.property(\"id\");",
+                  "    pm.expect(json.hero.codename).to.equal(\"Wolverine\");",
+                  "});",
+                  "if (json.hero && json.hero.id) {",
+                  "    pm.environment.set(\"createdHeroId\", json.hero.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"James Howlett\",\n  \"codename\": \"Wolverine\",\n  \"powerClass\": \"Mutate / Regeneration\",\n  \"powerLevel\": 91,\n  \"status\": \"Active Duty\",\n  \"affiliation\": \"X-Men / Avengers\",\n  \"baseLocation\": \"Xavier Mansion\",\n  \"clearanceLevel\": \"Level Alpha\",\n  \"gear\": [\"Adamantium Claws\", \"Tactical Suit\"],\n  \"missionsCompleted\": 48\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/heroes",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "heroes"]
+            }
+          }
+        },
+        {
+          "name": "PUT /api/heroes/:id - Update Hero (Wolverine)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Updated status is On Mission\", function () {",
+                  "    pm.expect(json.hero.status).to.equal(\"On Mission\");",
+                  "    pm.expect(json.hero.powerLevel).to.equal(96);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"On Mission\",\n  \"powerLevel\": 96,\n  \"baseLocation\": \"Savage Land Ops\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/heroes/{{createdHeroId}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "heroes", "{{createdHeroId}}"]
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/heroes/:id - Decommission Hero (Wolverine)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Hero decommission confirmed\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/heroes/{{createdHeroId}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "heroes", "{{createdHeroId}}"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/heroes/:id - Verify Deleted Hero (Negative 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/heroes/{{createdHeroId}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "heroes", "{{createdHeroId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Telemetry & Stats",
+      "item": [
+        {
+          "name": "GET /api/heroes/stats/summary - Operational Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Summary telemetry fields present\", function () {",
+                  "    pm.expect(json.summary).to.have.property(\"totalHeroes\");",
+                  "    pm.expect(json.summary).to.have.property(\"avgPowerLevel\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/heroes/stats/summary",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "heroes", "stats", "summary"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

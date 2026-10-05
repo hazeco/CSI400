@@ -1,0 +1,45 @@
+{
+  "name": "w6-csi400",
+  "version": "1.0.0",
+  "description": "CSI400 Week 6: API Testing (Postman + Mocha & Chai Automation) - Avengers Hero Command Center",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js",
+    "test": "mocha test/hero.api.test.js test/auth.api.test.js --timeout 15000 --exit",
+    "test:unit": "mocha test/hero.api.test.js --timeout 10000 --exit",
+    "test:auth": "mocha test/auth.api.test.js --timeout 10000 --exit",
+    "test:newman": "mocha test/newman.test.js --timeout 60000 --exit",
+    "test:all": "npm test && npm run test:newman",
+    "newman": "newman run postman/Avengers_Hero_API.postman_collection.json -e postman/Avengers_Hero_API.postman_environment.json --reporters cli"
+  },
+  "keywords": [
+    "csi400",
+    "api-testing",
+    "mocha",
+    "chai",
+    "postman",
+    "newman",
+    "avengers",
+    "web-services"
+  ],
+  "author": "CSI400 Student",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "axios": "^1.7.7",
+    "chai": "^4.3.10",
+    "mocha": "^10.7.3",
+    "newman": "^6.1.3",
+    "supertest": "^7.0.0"
+  }
+}

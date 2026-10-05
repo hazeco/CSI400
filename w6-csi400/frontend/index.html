@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSI400 Week 6 - Avengers API Testing & Operations Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- TOP NAVBAR -->
+    <nav class="top-navbar">
+        <div class="brand-section">
+            <span class="brand-badge">CSI400</span>
+            <div class="brand-title-wrap">
+                <h1>ระบบทดสอบ API &amp; ฐานข้อมูลฮีโร่ (Avengers API Hub)</h1>
+                <div class="sub-text">สัปดาห์ที่ 6: การทดสอบ API ด้วย Postman Script และ Mocha + Chai Automation</div>
+            </div>
+        </div>
+
+        <div class="nav-controls">
+            <div class="status-indicator">
+                <span class="status-dot" id="serverStatusDot"></span>
+                <span id="serverStatusText">Server Connected (:3000)</span>
+            </div>
+
+            <div class="user-badge-wrap">
+                <label for="userPresetSelect">ผู้ใช้งาน:</label>
+                <select id="userPresetSelect">
+                    <option value="tonystark">Tony Stark (Admin - Level Alpha)</option>
+                    <option value="captain">Steve Rogers (User - Captain America)</option>
+                    <option value="spiderman">Peter Parker (User - Spider-Man)</option>
+                    <option value="thor">Thor Odinson (User - Thor)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-outline btn-sm" onclick="resetHeroStore()">
+                🔄 รีเซ็ตข้อมูล
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main-layout">
+
+        <!-- METRICS ROW -->
+        <section class="metrics-row">
+            <div class="metric-card">
+                <div>
+                    <div class="title">ฮีโร่ในระบบทั้งหมด</div>
+                    <div class="value" id="statTotalHeroes">6</div>
+                    <div class="subtitle">สถานะพร้อมปฏิบัติหน้าที่: <span id="statActiveDuty">4</span> นาย</div>
+                </div>
+                <div class="icon-box">🦸</div>
+            </div>
+
+            <div class="metric-card">
+                <div>
+                    <div class="title">ผลการรัน Mocha &amp; Chai</div>
+                    <div class="value" id="statPassRate">100%</div>
+                    <div class="subtitle" id="passCountBadge">24 เคสผ่าน &bull; 0 เคสล้มเหลว</div>
+                </div>
+                <div class="icon-box">🧪</div>
+            </div>
+
+            <div class="metric-card">
+                <div>
+                    <div class="title">ค่าพลังเฉลี่ยในทีม</div>
+                    <div class="value" id="statAvgPower">91%</div>
+                    <div class="subtitle">ประเมินจาก Hero Roster ทั้งหมด</div>
+                </div>
+                <div class="icon-box">⚡</div>
+            </div>
+
+            <div class="metric-card">
+                <div>
+                    <div class="title">Postman / Newman Suite</div>
+                    <div class="value">20 / 20</div>
+                    <div class="subtitle">Assertions ตรวจสอบผ่าน Newman CLI</div>
+                </div>
+                <div class="icon-box">📦</div>
+            </div>
+        </section>
+
+        <!-- TAB NAVIGATION -->
+        <div class="tab-bar">
+            <button class="tab-nav-btn active" data-tab="tab-tests">
+                🧪 1. ทดสอบอัตโนมัติ (Mocha &amp; Chai)
+                <span class="tab-count" id="testDurationPill">438 ms</span>
+            </button>
+            <button class="tab-nav-btn" data-tab="tab-heroes">
+                🦸 2. จัดการข้อมูลฮีโร่ (Hero Services - No DB)
+                <span class="tab-count" id="heroesCountBadge">6</span>
+            </button>
+            <button class="tab-nav-btn" data-tab="tab-explorer">
+                📡 3. ทดลองยิง API ด้วยมือ (Manual Testing Deck)
+            </button>
+            <button class="tab-nav-btn" data-tab="tab-postman">
+                📦 4. ไฟล์ Postman &amp; คำสั่ง Newman
+            </button>
+        </div>
+
+        <!-- ==========================================
+             TAB 1: MOCHA & CHAI AUTOMATION
+             ========================================== -->
+        <section id="tab-tests" class="tab-panel active">
+            <div class="runner-header-box">
+                <div class="runner-title-desc">
+                    <h2>ศูนย์ควบคุมการรันเทสต์อัตโนมัติ (Mocha &amp; Chai Automated Test Suite)</h2>
+                    <p>
+                        กดปุ่มเพื่อสั่งให้ <code>server.js</code> รันชุดทดสอบ API ทุกเส้นทันที 
+                        (ตรวจสอบทั้ง CRUD, Schema, Token Authentication และ Negative Cases เช่น 400, 401, 404, 409)
+                    </p>
+                </div>
+                <div class="runner-actions">
+                    <button id="btnRunTests" class="btn btn-primary" onclick="runAutomatedTestSuite()">
+                        ▶ รัน Mocha Test ทั้งหมด
+                    </button>
+                    <button class="btn btn-outline" onclick="resetHeroStore()">
+                        🔄 ล้างสถานะข้อมูล
+                    </button>
+                </div>
+            </div>
+
+            <div class="runner-grid">
+                <!-- Test Case Execution Table -->
+                <div class="panel-card">
+                    <div class="panel-card-header">
+                        <h3>📋 รายการผลการทดสอบ (24 Test Cases)</h3>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">
+                            ซิงก์ผลลัพธ์สดจาก <code>npm test</code>
+                        </span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="test-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 70px;">สถานะ</th>
+                                    <th>หัวข้อการทดสอบ (Test Case Description)</th>
+                                    <th style="width: 180px;">หมวดหมู่ (Test Suite)</th>
+                                    <th style="width: 80px; text-align: right;">เวลา</th>
+                                </tr>
+                            </thead>
+                            <tbody id="testResultsList">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                                        <div style="font-size: 1rem; margin-bottom: 0.4rem; color: var(--text-secondary); font-weight: 600;">
+                                            ยังไม่ได้รันการทดสอบ (Ready to Execute)
+                                        </div>
+                                        <div style="font-size: 0.8rem;">
+                                            กดปุ่ม <strong style="color: #60a5fa;">"▶ รัน Mocha Test ทั้งหมด"</strong> ด้านบน เพื่อสั่งให้ <code>server.js</code> เริ่มรัน Mocha &amp; Chai สดๆ ทั้ง 24 เคส
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Theory Box (From Lecture Slide 10-11) -->
+                <div class="panel-card">
+                    <div class="panel-card-header">
+                        <h3>💡 สรุปประโยชน์ของ Automate Testing (ตามสไลด์)</h3>
+                    </div>
+                    <div class="theory-list">
+                        <div class="theory-item">
+                            <h4>1. ลดเวลาในการทดสอบ (Time Saving)</h4>
+                            <p>ไม่ต้องเสียเวลากดคลิกทดสอบทีละเส้นด้วยมือ เปลี่ยนเป็นการรันอัตโนมัติ 24 เคสเสร็จสิ้นใน 0.4 วินาที</p>
+                        </div>
+                        <div class="theory-item">
+                            <h4>2. ป้องกันข้อผิดพลาดซ้ำ (Regression Prevention)</h4>
+                            <p>เวลาแก้โค้ดหรือเพิ่ม Feature ใหม่ มั่นใจได้ว่าโค้ดส่วนอื่นจะไม่พัง หากมีจุดเสียหาย Test จะฟ้องทันที</p>
+                        </div>
+                        <div class="theory-item">
+                            <h4>3. เชื่อมต่อ CI/CD ได้สะดวก (CI Ready)</h4>
+                            <p>นำคำสั่ง <code>npm test</code> หรือ Newman ไปรันตรวจคุณภาพก่อน Deploy ขึ้นเซิร์ฟเวอร์จริงได้อัตโนมัติ</p>
+                        </div>
+                        <div class="theory-item">
+                            <h4>4. ค้นหาข้อบกพร่องได้เร็ว (Early Bug Detection)</h4>
+                            <p>ตรวจพบจุดผิดพลาดตั้งแต่ขั้นตอนเขียนโค้ด ลดต้นทุนและเวลาในการแก้บักในภายหลัง</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 2: HERO REGISTRY MANAGEMENT
+             ========================================== -->
+        <section id="tab-heroes" class="tab-panel">
+            <div class="table-toolbar">
+                <div class="filter-group">
+                    <input type="text" id="heroSearchInput" class="search-input" placeholder="ค้นหาตามชื่อฮีโร่, โค้ดเนม, หรือคลาสพลัง...">
+                    <select id="heroStatusFilter" class="select-input">
+                        <option value="ALL">สถานะทั้งหมด</option>
+                        <option value="Active Duty">Active Duty (พร้อมรบ)</option>
+                        <option value="On Mission">On Mission (กำลังทำภารกิจ)</option>
+                        <option value="Standby">Standby (เตรียมพร้อม)</option>
+                        <option value="Recovering">Recovering (พักฟื้น)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <button class="btn btn-primary" onclick="openCreateModal()">
+                        + เพิ่มฮีโร่ใหม่
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table of Heroes -->
+            <div class="panel-card">
+                <div style="overflow-x: auto;">
+                    <table class="heroes-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">ID</th>
+                                <th>โค้ดเนม (Codename)</th>
+                                <th>ชื่อจริง (Real Name)</th>
+                                <th>คลาสพลัง (Power Class)</th>
+                                <th style="width: 120px;">ค่าพลังรบ</th>
+                                <th style="width: 130px;">สถานะ</th>
+                                <th>ฐานที่มั่น</th>
+                                <th style="width: 140px; text-align: right;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="heroesTableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 3: INTERACTIVE API EXPLORER
+             ========================================== -->
+        <section id="tab-explorer" class="tab-panel">
+            <div class="api-deck-grid">
+                <!-- Endpoint Sidebar -->
+                <div class="panel-card">
+                    <div class="panel-card-header">
+                        <h3>เลือกเส้นทาง API</h3>
+                    </div>
+                    <div class="endpoint-menu" id="endpointListWrap">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Request & Response Workspace -->
+                <div>
+                    <div class="panel-card" style="margin-bottom: 1rem;">
+                        <div class="panel-card-header">
+                            <h3 id="explorerHeaderTitle">
+                                <span class="method-label m-get" id="explorerMethodBadge">GET</span>
+                                <span id="explorerDescText" style="font-weight: 500; font-size: 0.8rem; color: var(--text-secondary);">
+                                    ดึงรายการฮีโร่ทั้งหมด
+                                </span>
+                            </h3>
+                            <button id="btnSendManualRequest" class="btn btn-primary btn-sm" onclick="sendManualApiRequest()">
+                                ▶ ส่ง Request
+                            </button>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <div class="req-url-box">
+                                <input type="text" id="explorerUrlInput" readonly>
+                            </div>
+
+                            <div id="bodyEditorContainer" style="display: none;">
+                                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+                                    Request Body (JSON Payload):
+                                </label>
+                                <textarea id="explorerBodyTextarea" class="code-editor" spellcheck="false"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-card-header">
+                            <h3>ผลตอบกลับจากเซิร์ฟเวอร์ (Response)</h3>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <span id="responseStatusBadge" class="badge-status badge-pass">200 OK</span>
+                                <span id="responseDurationBadge" style="font-size: 0.75rem; color: var(--text-muted);">12 ms</span>
+                            </div>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <pre id="responseJsonViewer" class="response-box">{ "message": "กดปุ่ม 'ส่ง Request' ด้านบนเพื่อทดสอบยิง API เส้นนี้" }</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 4: POSTMAN & NEWMAN
+             ========================================== -->
+        <section id="tab-postman" class="tab-panel">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                <div class="panel-card" style="padding: 1.25rem;">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem;">📁 ไฟล์ Postman Collection</h3>
+                    <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        ชุดทดสอบ 10 Requests ครอบคลุม Login, Hero CRUD, Negative Test และ Telemetry
+                    </p>
+                    <a href="/postman/Avengers_Hero_API.postman_collection.json" download class="btn btn-outline" style="text-decoration: none;">
+                        ⬇️ ดาวน์โหลด Collection (.json)
+                    </a>
+                </div>
+
+                <div class="panel-card" style="padding: 1.25rem;">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem;">🌐 ไฟล์ Postman Environment</h3>
+                    <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        ตัวแปรสภาพแวดล้อม: BASE_URL, authToken (บันทึกอัตโนมัติ), createdHeroId
+                    </p>
+                    <a href="/postman/Avengers_Hero_API.postman_environment.json" download class="btn btn-outline" style="text-decoration: none;">
+                        ⬇️ ดาวน์โหลด Environment (.json)
+                    </a>
+                </div>
+
+                <div class="panel-card" style="padding: 1.25rem;">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem;">🚀 รัน Newman CLI ใน Terminal</h3>
+                    <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        ใช้สำหรับรัน Collection โดยอัตโนมัติใน CI/CD Pipeline
+                    </p>
+                    <code style="display: block; background: var(--bg-input); padding: 0.45rem; border-radius: 4px; font-size: 0.75rem; color: #93c5fd;">
+                        npm run newman
+                    </code>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-card-header">
+                    <h3>📜 ตัวอย่างการเขียน Script ใน Postman (ตามสไลด์หน้า 2-3)</h3>
+                </div>
+                <div style="padding: 1rem;">
+                    <pre class="response-box" style="color: #cbd5e1; max-height: 250px;">
+// 1. ตรวจสอบ HTTP Status 200 (pm.test)
+pm.test("Status is 200 OK", function () {
+    pm.response.to.have.status(200);
+});
+
+// 2. ตรวจสอบ Content-Type เป็น JSON
+pm.test("Response is JSON", function () {
+    pm.response.to.have.header("Content-Type");
+    pm.expect(pm.response.headers.get("Content-Type")).to.include("application/json");
+});
+
+// 3. เก็บ Token ใส่ Environment อัตโนมัติ (Dynamic Auth)
+const json = pm.response.json();
+if (json.token) {
+    pm.environment.set("authToken", json.token);
+}
+                    </pre>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- MODAL FORM FOR HERO CREATE / EDIT -->
+    <div id="heroModal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modalTitle">ลงทะเบียนฮีโร่ใหม่</h3>
+                <button onclick="closeHeroModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;">&times;</button>
+            </div>
+
+            <form id="heroForm">
+                <input type="hidden" id="heroIdInput">
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label for="heroRealName">ชื่อจริง (Real Name) *</label>
+                        <input type="text" id="heroRealName" placeholder="เช่น Peter Parker" required>
+                    </div>
+                    <div class="form-item">
+                        <label for="heroCodename">โค้ดเนม (Codename) *</label>
+                        <input type="text" id="heroCodename" placeholder="เช่น Spider-Man" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label for="heroClass">คลาสพลัง (Power Class)</label>
+                        <select id="heroClass">
+                            <option value="Genius / Tech">Genius / Tech (เทคโนโลยี/เกราะ)</option>
+                            <option value="Super Soldier">Super Soldier (สุดยอดทหาร)</option>
+                            <option value="Cosmic / Mystic">Cosmic / Mystic (พลังจักรวาล/เวทมนตร์)</option>
+                            <option value="Gamma / Titan">Gamma / Titan (พลังรังสีแกมมา)</option>
+                            <option value="Stealth / Espionage">Stealth / Espionage (จารกรรม/สายลับ)</option>
+                            <option value="Mutate / Regeneration">Mutate / Regeneration (กลายพันธุ์)</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label for="heroPowerLevel">ค่าพลังรบ (Combat Power 1-100)</label>
+                        <input type="number" id="heroPowerLevel" min="1" max="100" value="85" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label for="heroStatus">สถานะการปฏิบัติหน้าที่</label>
+                        <select id="heroStatus">
+                            <option value="Active Duty">Active Duty (พร้อมรบ)</option>
+                            <option value="On Mission">On Mission (กำลังทำภารกิจ)</option>
+                            <option value="Standby">Standby (เตรียมพร้อม)</option>
+                            <option value="Recovering">Recovering (พักฟื้น)</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label for="heroAffiliation">สังกัดหน่วย</label>
+                        <input type="text" id="heroAffiliation" value="Avengers Core">
+                    </div>
+                </div>
+
+                <div class="form-item">
+                    <label for="heroLocation">ฐานที่มั่น (Base Location)</label>
+                    <input type="text" id="heroLocation" value="Avengers Tower, NYC">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem;">
+                    <button type="button" class="btn btn-outline" onclick="closeHeroModal()">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="toast-wrap"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

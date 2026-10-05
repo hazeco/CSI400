@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "name": "Tony Stark",
+    "codename": "Iron Man",
+    "powerClass": "Genius / Tech",
+    "powerLevel": 95,
+    "status": "Active Duty",
+    "affiliation": "Avengers Core",
+    "baseLocation": "Avengers Tower, NYC",
+    "clearanceLevel": "Level Alpha",
+    "gear": ["Mark 85 Nanotech Armor", "Repulsor Rays", "Arc Reactor"],
+    "missionsCompleted": 42
+  },
+  {
+    "id": 2,
+    "name": "Steve Rogers",
+    "codename": "Captain America",
+    "powerClass": "Super Soldier",
+    "powerLevel": 88,
+    "status": "Active Duty",
+    "affiliation": "Avengers Core",
+    "baseLocation": "Brooklyn Facility",
+    "clearanceLevel": "Level Alpha",
+    "gear": ["Vibranium Shield", "Tactical Body Armor"],
+    "missionsCompleted": 58
+  },
+  {
+    "id": 3,
+    "name": "Peter Parker",
+    "codename": "Spider-Man",
+    "powerClass": "Mutate / Agility",
+    "powerLevel": 85,
+    "status": "On Mission",
+    "affiliation": "Avengers Reserves",
+    "baseLocation": "Queens Safehouse",
+    "clearanceLevel": "Level Beta",
+    "gear": ["Iron Spider Armor", "Web Shooters", "Spider-Drone"],
+    "missionsCompleted": 27
+  },
+  {
+    "id": 4,
+    "name": "Thor Odinson",
+    "codename": "God of Thunder",
+    "powerClass": "Cosmic / Mystic",
+    "powerLevel": 98,
+    "status": "Standby",
+    "affiliation": "Avengers Core",
+    "baseLocation": "New Asgard / Quinjet Bay",
+    "clearanceLevel": "Level Alpha",
+    "gear": ["Mjolnir", "Stormbreaker", "Cape of Asgard"],
+    "missionsCompleted": 64
+  },
+  {
+    "id": 5,
+    "name": "Natasha Romanoff",
+    "codename": "Black Widow",
+    "powerClass": "Stealth / Espionage",
+    "powerLevel": 82,
+    "status": "On Mission",
+    "affiliation": "S.H.I.E.L.D. Special Ops",
+    "baseLocation": "Budapest Safehouse",
+    "clearanceLevel": "Level Alpha",
+    "gear": ["Widow's Bite Gauntlets", "Grappling Hooks", "Stun Batons"],
+    "missionsCompleted": 51
+  },
+  {
+    "id": 6,
+    "name": "Bruce Banner",
+    "codename": "Hulk",
+    "powerClass": "Gamma / Titan",
+    "powerLevel": 99,
+    "status": "Recovering",
+    "affiliation": "Avengers Core",
+    "baseLocation": "Stark Labs Sub-Level 4",
+    "clearanceLevel": "Level Beta",
+    "gear": ["Gamma Radiation Neutralizer", "Elastic Stretch Suit"],
+    "missionsCompleted": 39
+  }
+]
